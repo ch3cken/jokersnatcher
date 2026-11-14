@@ -16,4 +16,4 @@
 
 [node name="SoundEffectManager" type="Node"]
 script = ExtResource("1_script")
-SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2"), ExtResource("4_hover"), ExtResource("5_click"), ExtResource("6_start"), ExtResource("7_countdown"), ExtResource("8_defeat"), ExtResource("9_victory"), ExtResource("10_result"), ExtResource("11_mag_start"), ExtResource("12_mag_end"), ExtResource("13_enemy_mag")])
+SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2"), ExtResource("4_hover"), ExtResource("5_click"), ExtResource("6_start"), ExtResource("7_countdown"), ExtResource("8_defeat"), ExtResource("9_victory"), ExtResource("10_result"), ExtResource("11_mag_start"), ExtResource("12_mag_end"), ExtResource("13_enemy_mag"), ExtResource("11_mag_start")])

@@ -19,6 +19,11 @@ public partial class TitleScreen : Control
 		_catRect.Position = new Vector2(_catRect.Position.X, 200.0f);
 
 		_settingsButton = GetNode<Button>("DifficultyButtons/SettingsButton");
+		foreach (Node child in GetNode("DifficultyButtons").GetChildren())
+		{
+			if (child is Button button)
+				button.MouseEntered += OnButtonHovered;
+		}
 		_settingsPopup = GetNode<PopupPanel>("SettingsPopup");
 		_fullscreenCheckBox = GetNode<CheckBox>("SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox");
 		_volumeSlider = GetNode<HSlider>("SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider");
@@ -55,8 +60,15 @@ public partial class TitleScreen : Control
 		_lastPopupHideMsec = Time.GetTicksMsec();
 	}
 
+	private void OnButtonHovered()
+	{
+		SoundEffectManager.Instance?.PlayButtonHover();
+	}
+
 	public void OnPlayButtonPressed(int difficulty)
 	{
+		SoundEffectManager.Instance?.PlayButtonClick();
+		SoundEffectManager.Instance?.PlayGameStart();
 		PackedScene gamePackedScene = GD.Load<PackedScene>("res://Scenes/Game/GameScene.tscn");
 		GameScene gameScene = gamePackedScene.Instantiate<GameScene>();
 		gameScene.Difficulty = (OpponentDifficulty)difficulty;
@@ -70,6 +82,7 @@ public partial class TitleScreen : Control
 
 	public void OnSettingsButtonPressed()
 	{
+		SoundEffectManager.Instance?.PlayButtonClick();
 		if (_settingsPopup.Visible)
 		{
 			_settingsPopup.Hide();
@@ -95,6 +108,7 @@ public partial class TitleScreen : Control
 
 	public void OnFullscreenCheckBoxToggled(bool toggledOn)
 	{
+		SoundEffectManager.Instance?.PlayButtonClick();
 		if (toggledOn)
 		{
 			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);

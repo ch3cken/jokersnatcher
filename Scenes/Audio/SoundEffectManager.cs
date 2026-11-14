@@ -57,6 +57,7 @@ public partial class SoundEffectManager : Node
 	public void PlayMagnifierStart() => PlaySound((int)Effect.MagnifierStart);
 	public void PlayMagnifierEnd() => PlaySound((int)Effect.MagnifierEnd);
 	public void PlayEnemyMagnifier() => PlaySound((int)Effect.EnemyMagnifier);
+	public void PlayReturnToMain() => PlaySound((int)Effect.ReturnToMain);
 
 	private enum Effect
 	{
@@ -72,5 +73,6 @@ public partial class SoundEffectManager : Node
 		MagnifierStart,
 		MagnifierEnd,
 		EnemyMagnifier,
+		ReturnToMain,
 	}
 }

@@ -88,6 +88,8 @@ public partial class GameScene : Node2D
             restTime = 0;
             move = choice.Move;
             if (move == Move.Wait) return;
+            if (move == Move.Inspect)
+                SoundEffectManager.Instance?.PlayEnemyMagnifier();
             if (move != Move.Inspect)
             {
                 targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
@@ -265,6 +267,10 @@ public partial class GameScene : Node2D
         {
             Input.MouseMode = Input.MouseModeEnum.Visible;
             transitioning = true;
+            if (result == "WIN")
+                SoundEffectManager.Instance?.PlayVictory();
+            else
+                SoundEffectManager.Instance?.PlayDefeat();
             TransitionToResults(result == "WIN");
         }
     }
@@ -308,6 +314,7 @@ public partial class GameScene : Node2D
         Size = new Vector2(152, 46), MouseDefaultCursorShape = Control.CursorShape.PointingHand
     };
     private float countdown = 3;
+    private int shownCountdown = -1;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
     private Vector2 center => new(480, 302);
@@ -377,6 +384,7 @@ public partial class GameScene : Node2D
         paw = ArmRest;
         result = null;
         countdown = 3;
+        shownCountdown = -1;
         ai = new OpponentAI();
         var deck = new List<Card>(20);
         for (int rank = 1; rank <= 10; rank++)
@@ -415,6 +423,15 @@ public partial class GameScene : Node2D
         pointer = GetLocalMousePosition();
         landingGlow = Mathf.MoveToward(landingGlow, 0, (float)delta / 0.45f);
         countdown = Mathf.Max(0, countdown - (float)delta);
+        if (countdown > 0)
+        {
+            int tick = Mathf.CeilToInt(countdown);
+            if (tick != shownCountdown)
+            {
+                shownCountdown = tick;
+                SoundEffectManager.Instance?.PlayCountdown();
+            }
+        }
         if (held != null)
         {
             Aim();
@@ -584,7 +601,11 @@ public partial class GameScene : Node2D
         pointer = GetGlobalTransformWithCanvas().AffineInverse() * button.Position;
         if (inspecting)
         {
-            if (!button.Pressed) inspecting = false;
+            if (!button.Pressed)
+            {
+                inspecting = false;
+                SoundEffectManager.Instance?.PlayMagnifierEnd();
+            }
             QueueRedraw();
             return;
         }
@@ -594,6 +615,7 @@ public partial class GameScene : Node2D
         {
             playerInspectUses--;
             inspecting = true;
+            SoundEffectManager.Instance?.PlayMagnifierStart();
             hoveredRival = null;
             QueueRedraw();
             return;
@@ -653,6 +675,8 @@ public partial class GameScene : Node2D
     {
         if (what == NotificationApplicationFocusOut)
         {
+            if (inspecting)
+                SoundEffectManager.Instance?.PlayMagnifierEnd();
             inspecting = false;
             held = pendingPair = null;
         }

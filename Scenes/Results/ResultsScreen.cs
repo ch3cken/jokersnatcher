@@ -17,6 +17,7 @@ public partial class ResultsScreen : Control
 
 	public override void _Ready()
 	{
+		SoundEffectManager.Instance?.PlayResultEnter();
 		_mainLayout = GetNode<Control>("MainLayout");
 		_centerImage = GetNode<TextureRect>("MainLayout/VBoxContainer/CenterContainer/CenterGroup/CenterImage");
 		_captionLabel = GetNode<Label>("MainLayout/VBoxContainer/CenterContainer/CenterGroup/CaptionLabel");
@@ -53,6 +54,7 @@ public partial class ResultsScreen : Control
 		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
 		{
 			_canContinue = false;
+			SoundEffectManager.Instance?.PlayReturnToMain();
 			GetTree().ChangeSceneToFile("res://Scenes/Title/title_screen.tscn");
 		}
 	}
