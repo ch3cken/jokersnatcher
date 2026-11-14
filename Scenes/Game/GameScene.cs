@@ -334,12 +334,10 @@ public partial class GameScene : Node2D
 
     private Card RivalGripAtPointer()
     {
-        Card card = carried;
-        if (card == null && (move == Move.Pair || move == Move.Shuffle) &&
-            reachTime >= 0.32f && targetCard != null && rival.Contains(targetCard))
-            card = targetCard;
-        float scale = card == carried ? PlayerScale : RivalScale;
-        return card != null && bounds.HasPoint((pointer - card.Position).Rotated(-card.Angle) / scale) ? card : null;
+        if (move is not (Move.Pair or Move.Shuffle) || reachTime < 0.32f ||
+            targetCard == null || !rival.Contains(targetCard)) return null;
+        Vector2 local = (pointer - targetCard.Position).Rotated(-targetCard.Angle) / RivalScale;
+        return bounds.HasPoint(local) ? targetCard : null;
     }
 
     private Card RivalAtPointer()
@@ -430,16 +428,9 @@ public partial class GameScene : Node2D
             if (held == null) held = RivalAtPointer();
             if (grip != null)
             {
-                if (grip == carried)
-                {
-                    // Keep one owner until a valid drop, including cancellation or focus loss.
-                    rival.Insert(Mathf.Min(insertionSlot, rival.Count), grip);
-                    carried = null;
-                }
                 targetCard = destinationCard = null;
                 deposit = paw;
-                if (move == Move.Steal) reachTime = DepositTime;
-                else reachTime = 0.67f;
+                reachTime = 0.67f;
             }
             hoveredRival = null;
             if (held != null) Aim();
