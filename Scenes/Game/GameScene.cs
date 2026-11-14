@@ -222,6 +222,9 @@ public partial class GameScene : Node2D
             previous = point;
         }
     }
+    [Export] public double ResultsDelaySeconds { get; set; } = 2;
+    [Export] public double ResultsFadeOutSeconds { get; set; } = 1;
+    private const int FadeOverlayLayer = 100;
     private bool transitioning;
 
     private void CheckResult()
@@ -237,7 +240,7 @@ public partial class GameScene : Node2D
 
     private void TransitionToResults(bool playerWon)
     {
-        var fadeLayer = new CanvasLayer { Layer = 100 };
+        var fadeLayer = new CanvasLayer { Layer = FadeOverlayLayer };
         var fadeRect = new ColorRect
         {
             Color = new Color(0, 0, 0, 0),
@@ -248,8 +251,8 @@ public partial class GameScene : Node2D
         AddChild(fadeLayer);
 
         Tween tween = CreateTween();
-        tween.TweenInterval(0.6);
-        tween.TweenProperty(fadeRect, "color:a", 1.0f, 0.6)
+        tween.TweenInterval(ResultsDelaySeconds);
+        tween.TweenProperty(fadeRect, "color:a", 1.0f, ResultsFadeOutSeconds)
             .SetTrans(Tween.TransitionType.Sine)
             .SetEase(Tween.EaseType.InOut);
         tween.TweenCallback(Callable.From(() => LoadResultsScreen(playerWon)));

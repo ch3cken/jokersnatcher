@@ -7,6 +7,7 @@ public partial class ResultsScreen : Control
 	[Export] public string LoseMessage { get; set; } = "You ended as the clown...";
 	[Export] public Texture2D WinImage { get; set; }
 	[Export] public Texture2D LoseImage { get; set; }
+	[Export] public double FadeInDurationSeconds { get; set; } = 0.4;
 
 	private Control _mainLayout;
 	private TextureRect _centerImage;
@@ -36,7 +37,7 @@ public partial class ResultsScreen : Control
 		// Smoothly fade in the UI over the black background
 		_mainLayout.Modulate = new Color(1, 1, 1, 0);
 		Tween tween = CreateTween();
-		tween.TweenProperty(_mainLayout, "modulate:a", 1.0f, 0.4)
+		tween.TweenProperty(_mainLayout, "modulate:a", 1.0f, FadeInDurationSeconds)
 			.SetTrans(Tween.TransitionType.Sine)
 			.SetEase(Tween.EaseType.Out);
 		tween.TweenCallback(Callable.From(() => _canContinue = true));
