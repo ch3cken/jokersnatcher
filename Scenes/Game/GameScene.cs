@@ -12,6 +12,7 @@ public partial class GameScene : Node2D
 
     [Export] public Texture2D PalmArt { get; set; }
     [Export] public Texture2D BodyArt { get; set; }
+    [Export] public Texture2D RivalGlassArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
     [Export] public Texture2D BackgroundArt { get; set; }
     [Export] public Texture2D PartyArt { get; set; }
@@ -73,12 +74,24 @@ public partial class GameScene : Node2D
             restTime = 0;
             move = choice.Move;
             if (move == Move.Wait) return;
-            targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
-            destinationCard = choice.To < 0 ? null : rival[choice.To];
-            reachEnd = targetCard.Position;
+            if (move != Move.Inspect)
+            {
+                targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
+                destinationCard = choice.To < 0 ? null : rival[choice.To];
+                reachEnd = targetCard.Position;
+            }
             reachTime = restTime = 0;
         }
         reachTime += dt;
+        if (move == Move.Inspect)
+        {
+            Vector2 eye = new(419, 185);
+            paw = ArmRest.Lerp(eye, Phase(reachTime, 0, 0.24f) * (1 - Phase(reachTime, 0.94f, 1.2f)));
+            if (reachTime - dt < 0.9f && reachTime >= 0.9f && result == null)
+                ai.RememberInspection(mine.FindIndex(card => card.Rank == 0));
+            if (reachTime >= 1.2f) reachTime = -1;
+            return;
+        }
         if (move != Move.Steal)
         {
             UpdateOwnMove();
@@ -523,6 +536,18 @@ public partial class GameScene : Node2D
         {
             Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y);
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
+        }
+        if (reachTime >= 0 && move == Move.Inspect)
+        {
+            Vector2 lens = paw + new Vector2(18,-28);
+            if (RivalGlassArt != null)
+                DrawTextureRect(RivalGlassArt, new Rect2(lens - new Vector2(26,26), new Vector2(72,66)), false);
+            else
+            {
+                DrawLine(lens + new Vector2(-14,17), paw, Ink, 7, true);
+                DrawCircle(lens, 24, new Color("#80c6c95c"), true, -1, true);
+                DrawArc(lens, 24, 0, Mathf.Tau, 40, new Color("#396468"), 4, true);
+            }
         }
         var hand = held == null ? HandArt : ClosedHandArt;
         if (hand != null)
