@@ -14,6 +14,7 @@ public partial class GameScene : Node2D
     [Export] public Texture2D BodyArt { get; set; }
     [Export] public Texture2D RivalGlassArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
+    [Export] public Texture2D GlassIcon {get; set;}
     [Export] public Texture2D BackgroundArt { get; set; }
     [Export] public Texture2D PartyArt { get; set; }
     [Export] public Texture2D PartyShadow { get; set; }
@@ -26,6 +27,8 @@ public partial class GameScene : Node2D
     [Export] public Texture2D ThumbArt { get; set; }
     [Export] public Texture2D[] SecondFaces { get; set; } = new Texture2D[11];
     [Export] public Texture2D RivalPawArt { get; set; }
+    [Export] public AudioStream[] TakeCardSounds { get; set; } = new AudioStream[2];
+    private readonly AudioStreamPlayer cardSoundPlayer = new() { MaxPolyphony = 4 };
 
     private sealed class Card(int rank, bool second = false)
     {
@@ -43,7 +46,15 @@ public partial class GameScene : Node2D
     private readonly List<Card> discarding = new();
     private Card held, hoveredRival, hoveredMine;
     private bool fromRival, inspecting;
+    private int playerInspectUses;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
+    private static readonly Vector2 InspectBadgeCenter = new(867, 466);
+    private const float InspectBadgeWidth = 94f;
+    private const int InspectBadgeFontSize = 36;
+    private static readonly SystemFont ComicSansFont = new()
+    {
+        FontNames = new[] { "Comic Sans MS", "Comic Sans" }
+    };
     private Vector2 pressPoint;
     private float grabAngleOffset;
     private Vector2? lastDropPointer;
@@ -117,6 +128,7 @@ public partial class GameScene : Node2D
                     if (targetCard.Rank == 0) ai.AcquiredJoker();
                     carried = targetCard;
                     pickupAngle = carried.Angle;
+                    PlayTakeCardSound();
                     if (held == carried) held = null;
                     if (held == null || carried == pendingPair) pendingPair = null;
                 }
@@ -194,6 +206,7 @@ public partial class GameScene : Node2D
                     targetCard.LeavingRivalHand = destinationCard.LeavingRivalHand = true;
                     FlyToCenter(targetCard);
                     FlyToCenter(destinationCard);
+                    ai.GainInspectUse();
                     CheckResult();
                 }
                 else
@@ -241,6 +254,9 @@ public partial class GameScene : Node2D
             previous = point;
         }
     }
+    [Export] public double ResultsDelaySeconds { get; set; } = 2;
+    [Export] public double ResultsFadeOutSeconds { get; set; } = 1;
+    private const int FadeOverlayLayer = 100;
     private bool transitioning;
 
     private void CheckResult()
@@ -257,7 +273,7 @@ public partial class GameScene : Node2D
 
     private void TransitionToResults(bool playerWon)
     {
-        var fadeLayer = new CanvasLayer { Layer = 100 };
+        var fadeLayer = new CanvasLayer { Layer = FadeOverlayLayer };
         var fadeRect = new ColorRect
         {
             Color = new Color(0, 0, 0, 0),
@@ -268,8 +284,8 @@ public partial class GameScene : Node2D
         AddChild(fadeLayer);
 
         Tween tween = CreateTween();
-        tween.TweenInterval(0.6);
-        tween.TweenProperty(fadeRect, "color:a", 1.0f, 0.6)
+        tween.TweenInterval(ResultsDelaySeconds);
+        tween.TweenProperty(fadeRect, "color:a", 1.0f, ResultsFadeOutSeconds)
             .SetTrans(Tween.TransitionType.Sine)
             .SetEase(Tween.EaseType.InOut);
         tween.TweenCallback(Callable.From(() => LoadResultsScreen(playerWon)));
@@ -300,6 +316,15 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
+        if (TakeCardSounds == null || TakeCardSounds.Length == 0 || TakeCardSounds.All(s => s == null))
+        {
+            TakeCardSounds = new[]
+            {
+                GD.Load<AudioStream>("res://cards/takecard1.mp3"),
+                // GD.Load<AudioStream>("res://cards/takecard2.mp3")
+            };
+        }
+        AddChild(cardSoundPlayer);
         TintFaces(Faces, new Color("#58504b"));
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
@@ -354,7 +379,7 @@ public partial class GameScene : Node2D
         mine.Clear();
         rival.Clear();
         discarding.Clear();
-        held = hoveredRival = targetCard = carried = destinationCard = null;
+        held = match = hoveredRival = targetCard = carried = destinationCard = null;
         inspecting = dragged = fromRival = false;
         move = Move.Wait;
         reachTime = -1;
@@ -575,8 +600,9 @@ public partial class GameScene : Node2D
         }
         if (countdown > 0 || result != null) return;
         Card grip = button.Pressed && held == null ? RivalGripAtPointer() : null;
-        if (button.Pressed && held == null && grip == null && GlassBounds.HasPoint(pointer))
+        if (button.Pressed && held == null && grip == null && playerInspectUses > 0 && GlassBounds.HasPoint(pointer))
         {
+            playerInspectUses--;
             inspecting = true;
             hoveredRival = null;
             QueueRedraw();
@@ -597,14 +623,7 @@ public partial class GameScene : Node2D
                 reachTime = 0.67f;
             }
             hoveredRival = null;
-            if (held != null)
-            {
-                var cards = fromRival ? rival : mine;
-                gap = cards.IndexOf(held);
-                grabAngleOffset = SlotAngle(gap, cards.Count, fromRival)
-                    - Vector2.Up.AngleTo(pointer - FanCenter(cards.Count, fromRival));
-                Aim();
-            }
+            if (held != null) Aim();
         }
         else if (!button.Pressed && held != null)
         {
@@ -623,7 +642,6 @@ public partial class GameScene : Node2D
             {
                 Discard(pendingPair);
                 Discard(held);
-                lastDropPointer = pointer;
             }
             else if (dragged)
             {
@@ -648,9 +666,6 @@ public partial class GameScene : Node2D
             held = pendingPair = null;
         }
     }
-
-    private Card pendingPair;
-    private const float RivalDrawDistance = 75;
 
     private void Aim()
     {
@@ -741,6 +756,8 @@ public partial class GameScene : Node2D
         }
         Layer(TableArt);
         Layer(GlassArt);
+        Layer(GlassIcon);
+        DrawInspectUsesCount();
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         if (held != null) Paint(held, fromRival);
@@ -771,6 +788,19 @@ public partial class GameScene : Node2D
         if (inspecting && result == null) DrawMagnifier();
         if (countdown > 0 || result != null)
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
+    }
+
+    private void DrawInspectUsesCount()
+    {
+        DrawString(
+            ComicSansFont,
+            new Vector2(InspectBadgeCenter.X - InspectBadgeWidth * 0.5f, InspectBadgeCenter.Y + InspectBadgeFontSize * 0.36f),
+            playerInspectUses.ToString(),
+            HorizontalAlignment.Center,
+            InspectBadgeWidth,
+            InspectBadgeFontSize,
+            Colors.White
+        );
     }
 
     private void DrawMagnifier()
