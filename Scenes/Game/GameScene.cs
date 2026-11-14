@@ -21,6 +21,7 @@ public partial class GameScene : Node2D
     private readonly List<Card> rival = new();
     private readonly Rect2 bounds = new(-38, -60, 76, 120);
     private readonly RandomNumberGenerator rng = new();
+    private readonly List<Card> discarding = new();
     private Card held, match;
     private bool fromRival;
     private int gap;
@@ -103,7 +104,12 @@ public partial class GameScene : Node2D
         else if (!button.Pressed && held != null)
         {
             Aim();
-            if (pointer.Y >= 355)
+            if (match != null)
+            {
+                Discard(match);
+                Discard(held);
+            }
+            else if (pointer.Y >= 355)
             {
                 mine.Remove(held);
                 mine.Insert(gap, held);
@@ -123,9 +129,20 @@ public partial class GameScene : Node2D
         int others = mine.Count(c => c != held);
         gap = 0;
         while (gap < others && pointer.X > Slot(gap, others, false).X) gap++;
-        held.Position = pointer;
+        Card target = Pick(mine);
+        match = !fromRival && held.Rank > 0 && target?.Rank == held.Rank ? target : null;
+        held.Position = match == null ? pointer : match.Position + new Vector2(5,-5);
         held.Angle = 0;
     }
+    private void Discard(Card card)
+    {
+        mine.Remove(card);
+        discarding.Add(card);
+        var tween = CreateTween();
+        tween.TweenMethod(Callable.From<Vector2>(p => card.Position = p), card.Position, center, 0.32);
+        tween.TweenCallback(Callable.From(() => discarding.Remove(card)));
+    }
+
     public override void _Draw()
     {
         DrawRect(new Rect2(0, 0, 960, 600), Ink);
@@ -139,6 +156,7 @@ public partial class GameScene : Node2D
         if (TableArt != null) DrawTextureRect(TableArt,new Rect2(0,0,960,600),false);
         foreach (var card in rival) if (card != held) Paint(card, true);
         foreach (var card in mine) if (card != held) Paint(card, false);
+        foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
         if (HandArt != null) DrawTextureRect(HandArt,new Rect2(pointer,new Vector2(48,48)),false);
         else
