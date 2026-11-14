@@ -1,17 +1,19 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://bk7dfv62diywg"]
 
-[ext_resource type="Script" path="res://Scenes/Game/GameScene.cs" id="1"]
+[ext_resource type="Script" uid="uid://c4xuqehrmly7q" path="res://Scenes/Game/GameScene.cs" id="1"]
+[ext_resource type="Texture2D" uid="uid://2y7qx68shwhp" path="res://Art/Placeholders/Arm.svg" id="Arm"]
+[ext_resource type="Texture2D" uid="uid://lqwh04bdcpq1" path="res://Art/Placeholders/Body.svg" id="Body"]
+[ext_resource type="Texture2D" uid="uid://do38q0cmec6ey" path="res://Art/Placeholders/Glass.svg" id="Glass"]
+[ext_resource type="Texture2D" uid="uid://8gehsf6tvwgm" path="res://Art/Placeholders/PlayerPaw.svg" id="PlayerPaw"]
+[ext_resource type="Texture2D" uid="uid://b6c31js0fiexa" path="res://Art/Placeholders/RivalPaw.svg" id="RivalPaw"]
 
-[ext_resource type="Texture2D" path="res://Art/Placeholders/Body.svg" id="Body"]
-[ext_resource type="Texture2D" path="res://Art/Placeholders/PlayerPaw.svg" id="PlayerPaw"]
-[ext_resource type="Texture2D" path="res://Art/Placeholders/Glass.svg" id="Glass"]
-[ext_resource type="Texture2D" path="res://Art/Placeholders/Arm.svg" id="Arm"]
-[ext_resource type="Texture2D" path="res://Art/Placeholders/RivalPaw.svg" id="RivalPaw"]
+[ext_resource type="Texture2D" path="res://Art/Placeholders/RivalPalm.svg" id="Palm"]
 
-[node name="GameScene" type="Node2D"]
+[node name="GameScene" type="Node2D" unique_id=1890567042]
 script = ExtResource("1")
-BodyArt = ExtResource("Body")
+PalmArt = ExtResource("Palm")
 HandArt = ExtResource("PlayerPaw")
+BodyArt = ExtResource("Body")
 GlassArt = ExtResource("Glass")
 ArmArt = ExtResource("Arm")
 RivalPawArt = ExtResource("RivalPaw")

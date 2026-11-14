@@ -10,7 +10,8 @@ public partial class GameScene : Node2D
     [Export] public Texture2D TableArt { get; set; }
     [Export] public Texture2D HandArt { get; set; }
 
-     [Export] public Texture2D BodyArt { get; set; }
+    [Export] public Texture2D PalmArt { get; set; }
+    [Export] public Texture2D BodyArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
     [Export] public Texture2D ArmArt { get; set; }
     [Export] public Texture2D RivalPawArt { get; set; }
@@ -34,14 +35,23 @@ public partial class GameScene : Node2D
     private int gap;
     private Vector2 pointer;
     [Export(PropertyHint.Range, "1,20,0.1")] public float StealInterval { get; set; } = 5;
-    private static readonly Vector2 ArmRest = new(625, 146), ArmRaised = new(645, -65);
-    private Vector2 paw = ArmRest, reachEnd;
+    private static readonly Vector2 Shoulder = new(420, 214), ArmRest = new(369, 167);
+    private const float LiftEnd = 0.46f, CatchTime = 1.10f, ReturnStart = 1.24f,
+        WristOffscreen = 1.78f, DepositTime = 2.21f, RestTime = 2.47f;
+    private Vector2 paw = ArmRest, reachEnd, deposit;
     private Card targetCard, carried;
     private float reachTime = -1, restTime;
 
+    private static float Phase(float time, float start, float end) =>
+        Mathf.SmoothStep(0, 1, Mathf.Clamp((time - start) / (end - start), 0, 1));
+
+    private float Sky => -Position.Y / Scale.Y - 120;
+    private Vector2 Raised => new(Shoulder.X - 32, Sky);
+    private bool WristOverTable => reachTime >= LiftEnd && reachTime < WristOffscreen;
+
     private void UpdateArm(float dt)
     {
-        if (countdown > 0 || result != null) return;
+        if (countdown > 0 || (result != null && reachTime < 0)) return;
         if (reachTime < 0)
         {
             restTime += dt;
@@ -51,13 +61,12 @@ public partial class GameScene : Node2D
             reachTime = restTime = 0;
         }
         reachTime += dt;
-        if (reachTime < 0.42f)
-            paw = ArmRest.Lerp(ArmRaised, Mathf.SmoothStep(0, 1, reachTime / 0.42f));
-        else if (reachTime < 1.04f)
-        {
-            if (mine.Contains(targetCard)) reachEnd = targetCard.Position;
-            paw = ArmRaised.Lerp(reachEnd, Mathf.SmoothStep(0, 1, (reachTime - 0.42f) / 0.62f));
-        }
+        if (targetCard != null && mine.Contains(targetCard)) reachEnd = targetCard.Position;
+        Vector2 aboveTarget = new(reachEnd.X - 52, Sky);
+        if (reachTime < LiftEnd)
+            paw = ArmRest.Lerp(Raised, Phase(reachTime, 0, LiftEnd));
+        else if (reachTime < CatchTime)
+            paw = aboveTarget.Lerp(reachEnd, Phase(reachTime, LiftEnd, CatchTime));
         else
         {
             if (targetCard != null)
@@ -65,30 +74,66 @@ public partial class GameScene : Node2D
                 if (mine.Remove(targetCard))
                 {
                     carried = targetCard;
-                    reachEnd = carried.Position;
                     if (held == carried) held = match = null;
                     else if (match == carried) match = null;
                 }
                 targetCard = null;
+                deposit = carried != null ? Slot(0, rival.Count + 1, true) : ArmRest;
             }
-            Vector2 home = Slot(rival.Count, rival.Count + 1, true);
-            paw = reachTime < 1.8f
-                ? reachEnd.Lerp(home, Mathf.SmoothStep(0, 1, (reachTime - 1.15f) / 0.65f))
-                : home.Lerp(ArmRest, Mathf.SmoothStep(0, 1, (reachTime - 1.8f) / 0.32f));
+            if (reachTime < WristOffscreen)
+                paw = reachEnd.Lerp(aboveTarget, Phase(reachTime, ReturnStart, WristOffscreen));
+            else if (reachTime < DepositTime)
+                paw = Raised.Lerp(deposit, Phase(reachTime, WristOffscreen, DepositTime));
+            else
+                paw = deposit.Lerp(ArmRest, Phase(reachTime, DepositTime, RestTime));
+
             if (carried != null)
             {
-                carried.Position = paw;
-                if (reachTime >= 1.8f)
+                carried.Position = paw + new Vector2(0, 26);
+                if (reachTime >= DepositTime)
                 {
-                    rival.Add(carried);
+                    rival.Insert(0, carried);
                     carried = null;
                     CheckResult();
                 }
             }
-            if (reachTime >= 2.12f) reachTime = -1;
+            if (reachTime >= RestTime) reachTime = -1;
         }
     }
 
+    // A textured ribbon following a quadratic curve keeps the shoulder attached
+    // while the invisible elbow passes over the top of the viewport.
+    private void Sleeve(Vector2 start, Vector2 bend, Vector2 end)
+    {
+        if (ArmArt == null) return;
+        const int steps = 12;
+        const int side = steps + 1;
+        var outline = new Vector2[2 * side];
+        var uv = new Vector2[2 * side];
+        for (int i = 0; i <= steps; i++)
+        {
+            float t = (float)i / steps;
+            Vector2 a = start.Lerp(bend, t), b = bend.Lerp(end, t);
+            Vector2 normal = (b - a).Normalized().Orthogonal() * Mathf.Lerp(18, 15, t);
+            Vector2 point = a.Lerp(b, t);
+            int opposite = 2 * side - 1 - i;
+            outline[i] = point + normal;
+            outline[opposite] = point - normal;
+            uv[i] = new(0, t);
+            uv[opposite] = new(1, t);
+        }
+        DrawPolygon(outline, new[] { Colors.White }, uv, ArmArt);
+    }
+
+    private void DrawShoulder()
+    {
+        float raised = reachTime < 0 ? 0 : reachTime < LiftEnd
+            ? Phase(reachTime, 0, LiftEnd)
+            : 1 - Phase(reachTime, WristOffscreen, DepositTime);
+        Vector2 end = WristOverTable ? Raised : paw;
+        Vector2 bend = new Vector2(Shoulder.X - 52, 294).Lerp(new(Shoulder.X - 58, 130), raised);
+        Sleeve(Shoulder, bend, end);
+    }
     private void CheckResult()
     {
         if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
@@ -131,8 +176,8 @@ public partial class GameScene : Node2D
     {
         float t = i - (total - 1) / 2f;
         float arc = Mathf.Pow(t / Mathf.Max(1, (total - 1) / 2f), 2);
-        return new((upper ? 484 : 300) + t * Mathf.Min(upper ? 25 : 29, 470f / Mathf.Max(1, total - 1)),
-                   upper ? 232 + arc * 13 : 484 + arc * 23);
+        return new((upper ? 505 : 300) + t * Mathf.Min(upper ? 19 : 29, 470f / Mathf.Max(1, total - 1)),
+                   upper ? 198 + arc * 18 : 484 + arc * 23);
     }
 
     private void Layout(float weight)
@@ -166,7 +211,7 @@ public partial class GameScene : Node2D
                     if (distance == 0) destination.Y -= 8;
                 }
                 card.Position = card.Position.Lerp(destination, weight);
-                card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * 0.022f, weight);
+                card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * (upper ? 0.072f : 0.022f), weight);
                 i++;
             }
         }
@@ -273,15 +318,22 @@ public partial class GameScene : Node2D
         if (TableArt != null) DrawTextureRect(TableArt,new Rect2(0,0,960,600),false);
         if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
         if (GlassArt != null) DrawTextureRect(GlassArt,new Rect2(684,439,139,113),false);
+        DrawShoulder();
         foreach (var card in rival) if (card != held) Paint(card, true);
+        if (RivalPawArt != null)
+            DrawTextureRect(RivalPawArt, new Rect2(530, 229, 70, 56), false);
         foreach (var card in mine) if (card != held) Paint(card, false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
-        if (carried != null) Paint(carried, true);
-        if (ArmArt != null && paw.Y > -30)
-            DrawTextureRect(ArmArt,new Rect2(paw.X - 23,-30,46,paw.Y + 30),false);
-        if (RivalPawArt != null)
-            DrawTextureRect(RivalPawArt,new Rect2(paw - new Vector2(39,19),new Vector2(78,65)),false);
+        if (WristOverTable && paw.Y > Sky + 2)
+        {
+            Vector2 top = new(reachEnd.X - 52, Sky - 40);
+            Sleeve(top, new(top.X - 25, (top.Y + paw.Y) / 2), paw);
+        }
+        if (carried != null) Paint(carried, reachTime >= WristOffscreen);
+        var activePaw = reachTime < LiftEnd || reachTime >= DepositTime ? PalmArt : RivalPawArt;
+        if (activePaw != null)
+            DrawTextureRect(activePaw, new Rect2(paw - new Vector2(33, 29), new Vector2(66, 58)), false);
         if (HandArt != null)
         {
             Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(738,341);
