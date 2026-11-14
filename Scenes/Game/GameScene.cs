@@ -27,6 +27,12 @@ public partial class GameScene : Node2D
     [Export] public Texture2D ThumbArt { get; set; }
     [Export] public Texture2D[] SecondFaces { get; set; } = new Texture2D[11];
     [Export] public Texture2D RivalPawArt { get; set; }
+    [Export] public Texture2D Count3Art { get; set; }
+    [Export] public Texture2D Count2Art { get; set; }
+    [Export] public Texture2D Count1Art { get; set; }
+    [Export] public Texture2D GoArt { get; set; }
+    [Export] public Texture2D WinArt { get; set; }
+    [Export] public Texture2D LoseArt { get; set; }
 
     private sealed class Card(int rank, bool second = false)
     {
@@ -318,6 +324,7 @@ public partial class GameScene : Node2D
         Size = new Vector2(152, 46), MouseDefaultCursorShape = Control.CursorShape.PointingHand
     };
     private float countdown = 3;
+    private float goTime;
     private int shownCountdown = -1;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
@@ -388,6 +395,7 @@ public partial class GameScene : Node2D
         result = null;
         countdown = 3;
         shownCountdown = -1;
+        goTime = 0;
         ai = new OpponentAI();
         var deck = new List<Card>(20);
         for (int rank = 1; rank <= 10; rank++)
@@ -426,6 +434,7 @@ public partial class GameScene : Node2D
         Fit();
         pointer = GetLocalMousePosition();
         landingGlow = Mathf.MoveToward(landingGlow, 0, (float)delta / 0.45f);
+        bool counting = countdown > 0;
         countdown = Mathf.Max(0, countdown - (float)delta);
         if (countdown > 0)
         {
@@ -436,6 +445,14 @@ public partial class GameScene : Node2D
                 SoundEffectManager.Instance?.PlayCountdown();
             }
         }
+        else if (counting)
+        {
+            shownCountdown = 0;
+            goTime = 1f;
+            SoundEffectManager.Instance?.PlayGo();
+        }
+        else
+            goTime = Mathf.Max(0, goTime - (float)delta);
         if (held != null)
         {
             Aim();
@@ -825,8 +842,29 @@ public partial class GameScene : Node2D
             DrawTextureRect(hand, new Rect2(pointer - hotspot, handSize), false);
         }
         if (inspecting && result == null) DrawMagnifier();
-        if (countdown > 0 || result != null)
-            DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
+        DrawCenterBanner();
+    }
+
+    private void DrawCenterBanner()
+    {
+        Texture2D banner = result switch
+        {
+            "WIN" => WinArt,
+            "LOSE" => LoseArt,
+            _ => null
+        };
+        if (banner == null && countdown > 0)
+        {
+            banner = Mathf.CeilToInt(countdown) switch
+            {
+                3 => Count3Art,
+                2 => Count2Art,
+                _ => Count1Art
+            };
+        }
+        if (banner == null && goTime > 0)
+            banner = GoArt;
+        Layer(banner);
     }
 
     private void DrawInspectUsesCount()

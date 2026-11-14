@@ -41,6 +41,12 @@
 [ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="SupportArt"]
 [ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="TableArt"]
 [ext_resource type="Texture2D" uid="uid://n2mumqwxnvvd" path="res://Art/Used/player/thumb.png" id="ThumbArt"]
+[ext_resource type="Texture2D" uid="uid://gsv3h1fsuecm" path="res://Art/Used/ui/3.png" id="Count3"]
+[ext_resource type="Texture2D" uid="uid://dgn4y4fhpm181" path="res://Art/Used/ui/2.png" id="Count2"]
+[ext_resource type="Texture2D" uid="uid://comd3de6jst6d" path="res://Art/Used/ui/1.png" id="Count1"]
+[ext_resource type="Texture2D" uid="uid://dp18m4kd2pfj4" path="res://Art/Used/ui/go.png" id="GoArt"]
+[ext_resource type="Texture2D" uid="uid://cnfttuba15ant" path="res://Art/Used/ui/win.png" id="WinArt"]
+[ext_resource type="Texture2D" uid="uid://bfyry5o6fw1t8" path="res://Art/Used/ui/lose.png" id="LoseArt"]
 
 [sub_resource type="AtlasTexture" id="crop_HandArt"]
 atlas = ExtResource("HandArt")
@@ -94,3 +100,9 @@ PlayerSupport = SubResource("crop_PlayerSupport")
 ThumbArt = SubResource("crop_ThumbArt")
 SecondFaces = [ExtResource("Joker"), ExtResource("Hearts1"), ExtResource("Hearts2"), ExtResource("Hearts3"), ExtResource("Hearts4"), ExtResource("Hearts5"), ExtResource("Hearts6"), ExtResource("Hearts7"), ExtResource("Hearts8"), ExtResource("Hearts9"), ExtResource("Hearts10")]
 RivalPawArt = SubResource("crop_RivalPawArt")
+Count3Art = ExtResource("Count3")
+Count2Art = ExtResource("Count2")
+Count1Art = ExtResource("Count1")
+GoArt = ExtResource("GoArt")
+WinArt = ExtResource("WinArt")
+LoseArt = ExtResource("LoseArt")

@@ -60,6 +60,11 @@ public partial class SoundEffectManager : Node
 	public void PlayMagnifierEnd() => PlaySound((int)Effect.MagnifierEnd);
 	public void PlayEnemyMagnifier() => PlaySound((int)Effect.EnemyMagnifier);
 	public void PlayReturnToMain() => PlaySound((int)Effect.ReturnToMain);
+	public void PlayGo()
+	{
+		PlaySound((int)Effect.EnemyMagnifier);
+		PlaySound((int)Effect.Sell);
+	}
 
 	private enum Effect
 	{
@@ -81,5 +86,6 @@ public partial class SoundEffectManager : Node
 		Card3,
 		Card4,
 		Deal,
+		Sell,
 	}
 }
