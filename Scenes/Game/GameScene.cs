@@ -61,8 +61,8 @@ public partial class GameScene : Node2D
     {
         float t = i - (total - 1) / 2f;
         float arc = Mathf.Pow(t / Mathf.Max(1, (total - 1) / 2f), 2);
-        return new(480 + t * Mathf.Min(64, 740f / Mathf.Max(1, total - 1)),
-                   upper ? 194 + arc * 13 : 484 + arc * 23);
+        return new((upper ? 484 : 300) + t * Mathf.Min(upper ? 25 : 29, 470f / Mathf.Max(1, total - 1)),
+                   upper ? 232 + arc * 13 : 484 + arc * 23);
     }
 
     private void Layout(float weight)
@@ -73,12 +73,29 @@ public partial class GameScene : Node2D
             int count = cards.Count(c => c != held);
             bool opening = !upper && held != null && !fromRival && match == null;
             int slots = count + (opening ? 1 : 0);
+            int focus = -1;
+            if (!upper && held == null)
+            {
+                // Use resting positions so the opening gap cannot move its own trigger.
+                for (int n = 0; n < count; n++)
+                {
+                    Vector2 local = pointer - Slot(n, count, false);
+                    if (bounds.Grow(9).HasPoint(local)) focus = n;
+                }
+            }
             int i = 0;
             foreach (Card card in cards)
             {
                 if (card == held) continue;
                 if (opening && i == gap) i++;
-                card.Position = card.Position.Lerp(Slot(i, slots, upper), weight);
+                Vector2 destination = Slot(i, slots, upper);
+                if (focus >= 0)
+                {
+                    int distance = i - focus;
+                    destination.X += Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
+                    if (distance == 0) destination.Y -= 8;
+                }
+                card.Position = card.Position.Lerp(destination, weight);
                 card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * 0.022f, weight);
                 i++;
             }
