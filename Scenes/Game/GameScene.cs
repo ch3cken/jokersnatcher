@@ -597,7 +597,10 @@ public partial class GameScene : Node2D
     private void DrawMagnifier()
     {
         Vector2 lens = new(480, 300);
-        DrawRect(new Rect2(Vector2.Zero, new Vector2(960, 600)), new Color("#171524eb"));
+        Rect2 viewport = GetViewportRect();
+        Transform2D toLocal = GetGlobalTransformWithCanvas().AffineInverse();
+        Vector2 corner = toLocal * viewport.Position;
+        DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color("#171524"));
         DrawSetTransform(lens, 0, new Vector2(1.10f, 1));
         DrawCircle(Vector2.Zero, 409, new Color("#b8b0c7"), true, -1, true);
         DrawCircle(Vector2.Zero, 401, new Color("#45445f"), true, -1, true);
@@ -632,9 +635,6 @@ public partial class GameScene : Node2D
                 DrawString(ThemeDB.FallbackFont, new(-38, 9), card.Rank == 0 ? "JOKER" : card.Rank.ToString(),
                     HorizontalAlignment.Center, 76, card.Rank == 0 ? 20 : 30, Ink);
             DrawRect(bounds, card.Rank == 0 ? Gold : new Color("#f2e9d7"), false, 1.5f);
-            // Keep the exposed corner readable where neighbouring cards overlap.
-            DrawString(ThemeDB.FallbackFont, new(-34, -40), card.Rank == 0 ? "J" : card.Rank.ToString(),
-                fontSize: 16, modulate: Ink);
         }
         Card moving = reachTime >= 0 && move != Move.Steal ? targetCard : null;
         foreach (Card card in rival)
