@@ -1,0 +1,225 @@
+[gd_scene format=3 uid="uid://btitle0000001"]
+
+[ext_resource type="Texture2D" uid="uid://deiyfl2ufmgjq" path="res://icon.svg" id="1_icon"]
+[ext_resource type="Script" uid="uid://dlhvegw4edpug" path="res://TitleScreen.cs" id="2_script"]
+[ext_resource type="Script" path="res://CalloutStyleBox.cs" id="3_callout_style"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_hover"]
+bg_color = Color(0.3, 0.34, 0.44, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.72, 0.88, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_normal"]
+bg_color = Color(0.22, 0.25, 0.32, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.5, 0.62, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_pressed"]
+bg_color = Color(0.15, 0.17, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.5, 0.62, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="Theme" id="Theme_difficulty_buttons"]
+Button/font_sizes/font_size = 24
+Button/styles/hover = SubResource("StyleBoxFlat_rect_hover")
+Button/styles/normal = SubResource("StyleBoxFlat_rect_normal")
+Button/styles/pressed = SubResource("StyleBoxFlat_rect_pressed")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_normal"]
+bg_color = Color(0.22, 0.25, 0.32, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.5, 0.62, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_pressed"]
+bg_color = Color(0.15, 0.17, 0.22, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.5, 0.62, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_hover"]
+bg_color = Color(0.3, 0.34, 0.44, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.72, 0.88, 1)
+corner_radius_top_left = 32
+corner_radius_top_right = 32
+corner_radius_bottom_right = 32
+corner_radius_bottom_left = 32
+
+[sub_resource type="StyleBox" id="StyleBox_callout_popup"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 16.0
+script = ExtResource("3_callout_style")
+BgColor = Color(0.16078432, 0.18039216, 0.23921569, 0.74509805)
+BorderColor = Color(0.45, 0.5, 0.62, 1)
+BorderWidth = 2.0
+CornerRadius = 8.0
+TailWidth = 22.0
+TailHeight = 14.0
+TailOffsetFromRight = 32.0
+
+[node name="TitleScreen" type="Control" unique_id=1707766913]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_script")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1169152060]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.11, 0.12, 0.15, 1)
+
+[node name="MainLayout" type="MarginContainer" parent="." unique_id=381744686]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 48
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainLayout" unique_id=1551295596]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="TitleLabel" type="Label" parent="MainLayout/VBoxContainer" unique_id=885945664]
+layout_mode = 2
+theme_override_font_sizes/font_size = 80
+text = "Joker Snatcher"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CenterImageContainer" type="CenterContainer" parent="MainLayout/VBoxContainer" unique_id=2127587807]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PlaceholderImage" type="TextureRect" parent="MainLayout/VBoxContainer/CenterImageContainer" unique_id=93025624]
+custom_minimum_size = Vector2(240, 240)
+layout_mode = 2
+texture = ExtResource("1_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DifficultyButtons" type="HBoxContainer" parent="MainLayout/VBoxContainer" unique_id=1418640760]
+layout_mode = 2
+theme = SubResource("Theme_difficulty_buttons")
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="EasyButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=1518661455]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Easy"
+
+[node name="NormalButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=1962110241]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Normal"
+
+[node name="HardButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=361955009]
+custom_minimum_size = Vector2(180, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Hard"
+
+[node name="SettingsButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=942626994]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Settings"
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_circle_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_circle_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_circle_hover")
+text = "⚙"
+
+[node name="SettingsPopup" type="PopupPanel" parent="." unique_id=890161988]
+transparent_bg = true
+oversampling_override = 1.0
+size = Vector2i(240, 190)
+transparent = true
+theme_override_styles/panel = SubResource("StyleBox_callout_popup")
+
+[node name="MarginContainer" type="MarginContainer" parent="SettingsPopup" unique_id=1444446989]
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 238.0
+offset_bottom = 174.0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPopup/MarginContainer" unique_id=445755603]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="FullscreenCheckBox" type="CheckBox" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=275186413]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Fullscreen"
+
+[node name="SoundLabel" type="Label" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=1988663825]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Sound"
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=883697281]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
+[connection signal="toggled" from="SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox" to="." method="OnFullscreenCheckBoxToggled"]
+[connection signal="value_changed" from="SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider" to="." method="OnVolumeSliderValueChanged"]
