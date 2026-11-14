@@ -97,7 +97,7 @@ public partial class GameScene : Node2D
             {
                 // The player can draw from this hand while the paw is returning.
                 insertionSlot = Mathf.Min(insertionSlot, rival.Count);
-                deposit = Slot(insertionSlot, rival.Count + 1, true);
+                deposit = Slot(RivalGapIndex, rival.Count + 1 - (rival.Contains(held) ? 1 : 0), true);
             }
             if (reachTime < DepositTime)
                 paw = reachEnd.Lerp(deposit, Phase(reachTime, ReturnStart, DepositTime));
@@ -106,7 +106,7 @@ public partial class GameScene : Node2D
 
             if (carried != null)
             {
-                carried.Position = paw + new Vector2(0, 26);
+                carried.Position = paw + new Vector2(0, 26 * (1 - Phase(reachTime, ReturnStart, DepositTime)));
                 if (reachTime >= DepositTime)
                 {
                     rival.Insert(insertionSlot, carried);
@@ -282,8 +282,19 @@ public partial class GameScene : Node2D
                    upper ? 198 + arc * 18 : 484 + arc * 23);
     }
 
+    // The dragged rival card still belongs to the list but occupies no visible slot.
+    private int RivalGapIndex
+    {
+        get
+        {
+            int hidden = held == null ? -1 : rival.IndexOf(held);
+            return hidden >= 0 && hidden < insertionSlot ? insertionSlot - 1 : insertionSlot;
+        }
+    }
+
     private Card RivalAtPointer()
     {
+        if (carried != null) return Pick(rival);
         // Resting positions keep the cursor on the same card while its neighbours slide.
         for (int i = rival.Count - 1; i >= 0; i--)
         {
@@ -300,7 +311,9 @@ public partial class GameScene : Node2D
         {
             var cards = upper ? rival : mine;
             int count = cards.Count(c => c != held);
-            bool opening = !upper && held != null && !fromRival && match == null;
+            bool receiving = upper && carried != null;
+            bool opening = receiving || (!upper && held != null && !fromRival && match == null);
+            int openAt = receiving ? RivalGapIndex : gap;
             int slots = count + (opening ? 1 : 0);
             int focus = upper && hoveredRival != null ? rival.IndexOf(hoveredRival) : -1;
             if (!upper && held == null)
@@ -316,9 +329,11 @@ public partial class GameScene : Node2D
             foreach (Card card in cards)
             {
                 if (card == held) continue;
-                if (opening && i == gap) i++;
+                if (opening && i == openAt) i++;
                 Vector2 destination = Slot(i, slots, upper);
-                if (focus >= 0)
+                if (receiving)
+                    destination.X += i < openAt ? -16 : 16;
+                if (focus >= 0 && !receiving)
                 {
                     int distance = i - focus;
                     destination.X += Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
