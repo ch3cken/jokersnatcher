@@ -55,11 +55,11 @@ public partial class TitleScreen : Control
 			return;
 		}
 
-		// Position the PopupPanel right above the SettingsButton in the bottom-right
+		// Position the PopupPanel right above the SettingsButton so the triangle tip points at the button's center
 		Rect2 buttonRect = _settingsButton.GetGlobalRect();
 		Vector2I popupSize = _settingsPopup.Size;
 		int x = Mathf.RoundToInt(buttonRect.End.X - popupSize.X);
-		int y = Mathf.RoundToInt(buttonRect.Position.Y - popupSize.Y - 12);
+		int y = Mathf.RoundToInt(buttonRect.Position.Y - popupSize.Y - 6);
 
 		_settingsPopup.Popup(new Rect2I(x, y, popupSize.X, popupSize.Y));
 	}
