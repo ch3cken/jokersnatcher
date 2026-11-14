@@ -44,9 +44,7 @@ public partial class GameScene : Node2D
         {
             restTime += dt;
             if (restTime < StealInterval || mine.Count == 0) return;
-            var available = mine.Where(c => c != held && c != match).ToArray();
-            if (available.Length == 0) return;
-            targetCard = available[rng.RandiRange(0, available.Length - 1)];
+            targetCard = mine[rng.RandiRange(0, mine.Count - 1)];
             reachEnd = targetCard.Position;
             reachTime = restTime = 0;
         }
@@ -62,8 +60,13 @@ public partial class GameScene : Node2D
         {
             if (targetCard != null)
             {
-                if (targetCard != held && targetCard != match && mine.Remove(targetCard))
+                if (mine.Remove(targetCard))
+                {
                     carried = targetCard;
+                    reachEnd = carried.Position;
+                    if (held == carried) held = match = null;
+                    else if (match == carried) match = null;
+                }
                 targetCard = null;
             }
             Vector2 home = Slot(rival.Count, rival.Count + 1, true);
