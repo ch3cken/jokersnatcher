@@ -213,6 +213,9 @@ max_value = 1.0
 step = 0.01
 value = 1.0
 
+[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/EasyButton" to="." method="OnPlayButtonPressed" binds= [0]]
+[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/NormalButton" to="." method="OnPlayButtonPressed" binds= [1]]
+[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/HardButton" to="." method="OnPlayButtonPressed" binds= [2]]
 [connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
 [connection signal="toggled" from="SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox" to="." method="OnFullscreenCheckBoxToggled"]
 [connection signal="value_changed" from="SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider" to="." method="OnVolumeSliderValueChanged"]

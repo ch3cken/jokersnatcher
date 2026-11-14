@@ -39,6 +39,19 @@ public partial class TitleScreen : Control
 		_lastPopupHideMsec = Time.GetTicksMsec();
 	}
 
+	public void OnPlayButtonPressed(int difficulty)
+	{
+		PackedScene gamePackedScene = GD.Load<PackedScene>("res://Scenes/Game/GameScene.tscn");
+		GameScene gameScene = gamePackedScene.Instantiate<GameScene>();
+		gameScene.Difficulty = (OpponentDifficulty)difficulty;
+
+		SceneTree tree = GetTree();
+		Node currentScene = tree.CurrentScene;
+		tree.Root.AddChild(gameScene);
+		tree.CurrentScene = gameScene;
+		currentScene?.QueueFree();
+	}
+
 	public void OnSettingsButtonPressed()
 	{
 		if (_settingsPopup.Visible)
