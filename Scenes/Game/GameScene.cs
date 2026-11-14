@@ -29,7 +29,8 @@ public partial class GameScene : Node2D
     private readonly RandomNumberGenerator rng = new();
     private readonly List<Card> discarding = new();
     private Card held, match, hoveredRival;
-    private bool fromRival;
+    private bool fromRival, inspecting;
+    private static readonly Rect2 GlassBounds = new(684, 439, 139, 113);
     private Vector2 pressPoint;
     private bool dragged;
     private int gap;
@@ -142,8 +143,8 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
-        foreach (int rank in new[] { 3, 7, 1, 5, 3, 0, 8, 7, 3, 9 }) mine.Add(new Card(rank));
-        foreach (int rank in new[] { 2, 6, 4, 10, 1, 5, 8, 9, 2, 6 }) rival.Add(new Card(rank));
+        foreach (int rank in new[] { 3, 7, 1, 5, 3, 6, 8, 7, 3, 9 }) mine.Add(new Card(rank));
+        foreach (int rank in new[] { 2, 6, 4, 10, 0, 5, 8, 9, 2, 6 }) rival.Add(new Card(rank));
         Fit();
         Layout(1);
     }
@@ -163,7 +164,7 @@ public partial class GameScene : Node2D
         countdown = Mathf.Max(0, countdown - (float)delta);
         if (held != null) Aim();
         UpdateArm((float)delta);
-        hoveredRival = held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
+        hoveredRival = !inspecting && held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
         Layout(1 - Mathf.Exp(-18 * (float)delta));
         QueueRedraw();
     }
@@ -232,9 +233,23 @@ public partial class GameScene : Node2D
 
     public override void _Input(InputEvent input)
     {
-        if (countdown > 0 || result != null || input is not InputEventMouseButton button ||
+        if (input is not InputEventMouseButton button ||
             button.ButtonIndex != MouseButton.Left) return;
         pointer = GetGlobalTransformWithCanvas().AffineInverse() * button.Position;
+        if (inspecting)
+        {
+            if (!button.Pressed) inspecting = false;
+            QueueRedraw();
+            return;
+        }
+        if (countdown > 0 || result != null) return;
+        if (button.Pressed && held == null && GlassBounds.HasPoint(pointer))
+        {
+            inspecting = true;
+            hoveredRival = null;
+            QueueRedraw();
+            return;
+        }
         if (button.Pressed && held == null)
         {
             pressPoint = pointer;
@@ -274,7 +289,11 @@ public partial class GameScene : Node2D
 
     public override void _Notification(int what)
     {
-        if (what == NotificationApplicationFocusOut) held = match = null;
+        if (what == NotificationApplicationFocusOut)
+        {
+            inspecting = false;
+            held = match = null;
+        }
     }
 
     private void Aim()
@@ -326,7 +345,7 @@ public partial class GameScene : Node2D
         DrawRect(new Rect2(0,295,960,305), new Color("#48446b"));
         if (TableArt != null) DrawTextureRect(TableArt,new Rect2(0,0,960,600),false);
         if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
-        if (GlassArt != null) DrawTextureRect(GlassArt,new Rect2(684,439,139,113),false);
+        if (GlassArt != null) DrawTextureRect(GlassArt, GlassBounds, false);
         DrawShoulder();
         foreach (var card in rival) if (card != held && card != hoveredRival) Paint(card, true);
         if (hoveredRival != null) Paint(hoveredRival, true);
@@ -353,10 +372,49 @@ public partial class GameScene : Node2D
             // The other paw supports the player hand from underneath.
             DrawTextureRect(HandArt,new Rect2(204,520,162,135),false);
         }
+        if (inspecting && result == null) DrawMagnifier();
         if (countdown > 0 || result != null)
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
     }
 
+    private void DrawMagnifier()
+    {
+        Vector2 lens = new(480, 300);
+        DrawRect(new Rect2(Vector2.Zero, new Vector2(960, 600)), new Color("#171524eb"));
+        DrawCircle(lens, 409, new Color("#b8b0c7"), true, -1, true);
+        DrawCircle(lens, 401, new Color("#45445f"), true, -1, true);
+        DrawArc(lens, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
+
+        int count = rival.Count;
+        float spacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
+        for (int i = 0; i < count; i++)
+        {
+            Card card = rival[i];
+            float offset = i - (count - 1) * 0.5f;
+            float t = offset / Mathf.Max(1, (count - 1) * 0.5f);
+            Vector2 pos = lens + new Vector2(offset * spacing, -35 + 44 * t * t);
+            DrawSetTransform(pos, t * 0.19f, Vector2.One * 1.85f);
+            if (card.Rank == 0)
+            {
+                DrawRect(bounds.Grow(5), new Color("#ffda793d"));
+                DrawRect(bounds.Grow(2), Gold);
+            }
+            DrawRect(bounds, new Color("#d9d5e2bd"));
+            Texture2D art = Faces != null && card.Rank < Faces.Length ? Faces[card.Rank] : null;
+            if (art != null)
+                DrawTextureRect(art, bounds, false, new Color(1, 1, 1, 0.74f));
+            else
+                DrawString(ThemeDB.FallbackFont, new(-38, 9), card.Rank == 0 ? "JOKER" : card.Rank.ToString(),
+                    HorizontalAlignment.Center, 76, card.Rank == 0 ? 20 : 30, Ink);
+            DrawRect(bounds, card.Rank == 0 ? Gold : new Color("#f2e9d7"), false, 1.5f);
+            // Keep the exposed corner readable where neighbouring cards overlap.
+            DrawString(ThemeDB.FallbackFont, new(-34, -40), card.Rank == 0 ? "J" : card.Rank.ToString(),
+                fontSize: 16, modulate: Ink);
+        }
+        DrawSetTransform(lens + new Vector2(0, 104), Mathf.Pi, Vector2.One);
+        if (RivalPawArt != null) DrawTextureRect(RivalPawArt, new Rect2(-87, -69, 174, 138), false);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
     private void Paint(Card card, bool hidden)
     {
         DrawSetTransform(card.Position,card.Angle,Vector2.One);
