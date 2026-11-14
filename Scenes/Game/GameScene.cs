@@ -381,10 +381,12 @@ public partial class GameScene : Node2D
     {
         Vector2 lens = new(480, 300);
         DrawRect(new Rect2(Vector2.Zero, new Vector2(960, 600)), new Color("#171524eb"));
-        DrawCircle(lens, 409, new Color("#b8b0c7"), true, -1, true);
-        DrawCircle(lens, 401, new Color("#45445f"), true, -1, true);
-        DrawArc(lens, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
+        DrawSetTransform(lens, 0, new Vector2(1.10f, 1));
+        DrawCircle(Vector2.Zero, 409, new Color("#b8b0c7"), true, -1, true);
+        DrawCircle(Vector2.Zero, 401, new Color("#45445f"), true, -1, true);
+        DrawArc(Vector2.Zero, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
 
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
         float spacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
         for (int i = 0; i < count; i++)
