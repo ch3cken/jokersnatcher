@@ -332,6 +332,16 @@ public partial class GameScene : Node2D
         }
     }
 
+    private Card RivalGripAtPointer()
+    {
+        Card card = carried;
+        if (card == null && (move == Move.Pair || move == Move.Shuffle) &&
+            reachTime >= 0.32f && targetCard != null && rival.Contains(targetCard))
+            card = targetCard;
+        float scale = card == carried ? PlayerScale : RivalScale;
+        return card != null && bounds.HasPoint((pointer - card.Position).Rotated(-card.Angle) / scale) ? card : null;
+    }
+
     private Card RivalAtPointer()
     {
         if (carried != null) return Pick(rival);
@@ -403,7 +413,8 @@ public partial class GameScene : Node2D
             return;
         }
         if (countdown > 0 || result != null) return;
-        if (button.Pressed && held == null && GlassBounds.HasPoint(pointer))
+        Card grip = button.Pressed && held == null ? RivalGripAtPointer() : null;
+        if (button.Pressed && held == null && grip == null && GlassBounds.HasPoint(pointer))
         {
             inspecting = true;
             hoveredRival = null;
@@ -414,9 +425,22 @@ public partial class GameScene : Node2D
         {
             pressPoint = pointer;
             dragged = false;
-            held = Pick(mine);
-            fromRival = held == null;
-            if (fromRival) held = RivalAtPointer();
+            held = grip ?? Pick(mine);
+            fromRival = grip != null || held == null;
+            if (held == null) held = RivalAtPointer();
+            if (grip != null)
+            {
+                if (grip == carried)
+                {
+                    // Keep one owner until a valid drop, including cancellation or focus loss.
+                    rival.Insert(Mathf.Min(insertionSlot, rival.Count), grip);
+                    carried = null;
+                }
+                targetCard = destinationCard = null;
+                deposit = paw;
+                if (move == Move.Steal) reachTime = DepositTime;
+                else reachTime = 0.67f;
+            }
             hoveredRival = null;
             if (held != null) Aim();
         }
@@ -522,7 +546,8 @@ public partial class GameScene : Node2D
         Layer(TableArt);
         Layer(GlassArt);
         DrawReachingArm();
-        foreach (var card in rival) if (card != held) Paint(card, true);
+        Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
+        foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(517,314,117,104), false);
         if (reachTime < 0 && PalmArt != null)
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
@@ -531,6 +556,7 @@ public partial class GameScene : Node2D
         if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
+        if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
         if (carried != null) Paint(carried, false);
         if (reachTime >= 0 && RivalPawArt != null)
         {
