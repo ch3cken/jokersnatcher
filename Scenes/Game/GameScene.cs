@@ -45,6 +45,7 @@ public partial class GameScene : Node2D
         DepositTime = 1.17f, RestTime = 1.42f;
     private Vector2 paw = ArmRest, reachEnd, deposit;
     private Card targetCard, carried;
+    private int insertionSlot;
     private float reachTime = -1, restTime;
 
     private static float Phase(float time, float start, float end) =>
@@ -89,7 +90,14 @@ public partial class GameScene : Node2D
                     else if (match == carried) match = null;
                 }
                 targetCard = null;
-                deposit = carried != null ? Slot(0, rival.Count + 1, true) : ArmRest;
+                deposit = ArmRest;
+                if (carried != null) insertionSlot = rng.RandiRange(0, rival.Count);
+            }
+            if (carried != null)
+            {
+                // The player can draw from this hand while the paw is returning.
+                insertionSlot = Mathf.Min(insertionSlot, rival.Count);
+                deposit = Slot(insertionSlot, rival.Count + 1, true);
             }
             if (reachTime < DepositTime)
                 paw = reachEnd.Lerp(deposit, Phase(reachTime, ReturnStart, DepositTime));
@@ -101,7 +109,7 @@ public partial class GameScene : Node2D
                 carried.Position = paw + new Vector2(0, 26);
                 if (reachTime >= DepositTime)
                 {
-                    rival.Insert(0, carried);
+                    rival.Insert(insertionSlot, carried);
                     carried = null;
                     CheckResult();
                 }
