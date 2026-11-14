@@ -14,6 +14,7 @@ public partial class GameScene : Node2D
     [Export] public Texture2D BodyArt { get; set; }
     [Export] public Texture2D RivalGlassArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
+    [Export] public Texture2D GlassIcon {get; set;}
     [Export] public Texture2D BackgroundArt { get; set; }
     [Export] public Texture2D PartyArt { get; set; }
     [Export] public Texture2D PartyShadow { get; set; }
@@ -45,9 +46,13 @@ public partial class GameScene : Node2D
     private bool fromRival, inspecting;
     private int playerInspectUses;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
-    private static readonly Vector2 InspectBadgeCenter = new(844, 472);
-    private const float InspectBadgeRadius = 32f;
+    private static readonly Vector2 InspectBadgeCenter = new(867, 466);
+    private const float InspectBadgeWidth = 94f;
     private const int InspectBadgeFontSize = 36;
+    private static readonly SystemFont ComicSansFont = new()
+    {
+        FontNames = new[] { "Comic Sans MS", "Comic Sans" }
+    };
     private Vector2 pressPoint;
     private bool dragged;
     private int gap;
@@ -632,7 +637,8 @@ public partial class GameScene : Node2D
         }
         Layer(TableArt);
         Layer(GlassArt);
-        DrawInspectUsesBadge();
+        Layer(GlassIcon);
+        DrawInspectUsesCount();
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
@@ -662,17 +668,16 @@ public partial class GameScene : Node2D
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
     }
 
-    private void DrawInspectUsesBadge()
+    private void DrawInspectUsesCount()
     {
-        DrawCircle(InspectBadgeCenter, InspectBadgeRadius, Colors.White, true, -1, true);
         DrawString(
-            ThemeDB.FallbackFont,
-            new Vector2(InspectBadgeCenter.X - InspectBadgeRadius, InspectBadgeCenter.Y + InspectBadgeFontSize * 0.36f),
+            ComicSansFont,
+            new Vector2(InspectBadgeCenter.X - InspectBadgeWidth * 0.5f, InspectBadgeCenter.Y + InspectBadgeFontSize * 0.36f),
             playerInspectUses.ToString(),
             HorizontalAlignment.Center,
-            InspectBadgeRadius * 2,
+            InspectBadgeWidth,
             InspectBadgeFontSize,
-            Colors.Black
+            Colors.White
         );
     }
 
