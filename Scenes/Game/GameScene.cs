@@ -29,6 +29,8 @@ public partial class GameScene : Node2D
     private readonly List<Card> discarding = new();
     private Card held, match;
     private bool fromRival;
+    private Vector2 pressPoint;
+    private bool dragged;
     private int gap;
     private Vector2 pointer;
     [Export(PropertyHint.Range, "1,20,0.1")] public float StealInterval { get; set; } = 5;
@@ -182,6 +184,8 @@ public partial class GameScene : Node2D
         pointer = GetGlobalTransformWithCanvas().AffineInverse() * button.Position;
         if (button.Pressed && held == null)
         {
+            pressPoint = pointer;
+            dragged = false;
             held = Pick(mine);
             fromRival = held == null;
             if (fromRival) held = Pick(rival);
@@ -203,7 +207,7 @@ public partial class GameScene : Node2D
                 Discard(match);
                 Discard(held);
             }
-            else if (pointer.Y >= 355)
+            else if (dragged && pointer.Y >= 355)
             {
                 mine.Remove(held);
                 mine.Insert(gap, held);
@@ -224,11 +228,35 @@ public partial class GameScene : Node2D
         int others = mine.Count(c => c != held);
         gap = 0;
         while (gap < others && pointer.X > Slot(gap, others, false).X) gap++;
-        Card target = Pick(mine);
-        match = !fromRival && held.Rank > 0 && target?.Rank == held.Rank ? target : null;
+        dragged |= pointer.DistanceSquaredTo(pressPoint) >= 36;
+        match = dragged && !fromRival && held.Rank > 0 ? NearbyMatch() : null;
         held.Position = match == null ? pointer : match.Position + new Vector2(5,-5);
         held.Angle = 0;
     }
+    private Card NearbyMatch()
+    {
+        // Probe visible card faces so a buried card cannot snap through its neighbour.
+        Card closest = null;
+        float best = float.PositiveInfinity;
+        foreach (var offset in SnapOffsets)
+        {
+            var probe = pointer + offset;
+            var top = mine.LastOrDefault(c => c != held &&
+                bounds.HasPoint((probe - c.Position).Rotated(-c.Angle)));
+            if (top?.Rank != held.Rank || offset.LengthSquared() >= best) continue;
+            best = offset.LengthSquared();
+            closest = top;
+            if (best == 0) break;
+        }
+        return closest;
+    }
+
+    private static readonly Vector2[] SnapOffsets = {
+        Vector2.Zero, new(-7,0), new(7,0), new(0,-7), new(0,7),
+        new(-10,-10), new(10,-10), new(-10,10), new(10,10),
+        new(-15,0), new(15,0), new(0,-15), new(0,15)
+    };
+
     private void Discard(Card card)
     {
         mine.Remove(card);
