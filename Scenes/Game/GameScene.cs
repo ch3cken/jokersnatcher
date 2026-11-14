@@ -217,7 +217,7 @@ public partial class GameScene : Node2D
                 {
                     int distance = i - focus;
                     destination.X += Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
-                    if (distance == 0) destination.Y -= 8;
+                    if (!upper && distance == 0) destination.Y -= 8;
                 }
                 card.Position = card.Position.Lerp(destination, weight);
                 card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * (upper ? 0.072f : 0.022f), weight);
@@ -347,8 +347,7 @@ public partial class GameScene : Node2D
         if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
         if (GlassArt != null) DrawTextureRect(GlassArt, GlassBounds, false);
         DrawShoulder();
-        foreach (var card in rival) if (card != held && card != hoveredRival) Paint(card, true);
-        if (hoveredRival != null) Paint(hoveredRival, true);
+        foreach (var card in rival) if (card != held) Paint(card, true);
         if (RivalPawArt != null)
         {
             DrawSetTransform(new Vector2(565, 257), Mathf.Pi, Vector2.One);
