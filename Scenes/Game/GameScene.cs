@@ -37,7 +37,7 @@ public partial class GameScene : Node2D
     private int gap;
     private Vector2 pointer;
     [Export] public OpponentDifficulty Difficulty { get; set; } = OpponentDifficulty.Normal;
-    private readonly OpponentAI ai = new();
+    private OpponentAI ai;
     private Move move;
     private Card destinationCard;
     private static readonly Vector2 Shoulder = new(420, 214), ArmRest = new(369, 167);
@@ -192,8 +192,14 @@ public partial class GameScene : Node2D
     {
         if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
         if (rival.Count == 1 && rival[0].Rank == 0 && carried == null) result = "LOSE";
+        retry.Visible = result != null;
     }
 
+    private readonly Button retry = new()
+    {
+        Text = "RETRY", Visible = false, Position = new Vector2(404, 344),
+        Size = new Vector2(152, 46), MouseDefaultCursorShape = Control.CursorShape.PointingHand
+    };
     private float countdown = 3;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
@@ -201,6 +207,27 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
+        AddChild(retry);
+        retry.AddThemeFontSizeOverride("font_size", 22);
+        retry.Pressed += StartRound;
+        StartRound();
+    }
+
+    private void StartRound()
+    {
+        retry.Hide();
+        mine.Clear();
+        rival.Clear();
+        discarding.Clear();
+        held = match = hoveredRival = targetCard = carried = destinationCard = null;
+        inspecting = dragged = fromRival = false;
+        move = Move.Wait;
+        reachTime = -1;
+        restTime = 0;
+        paw = ArmRest;
+        result = null;
+        countdown = 3;
+        ai = new OpponentAI();
         var deck = new List<Card>(20);
         for (int rank = 1; rank <= 10; rank++)
         {
