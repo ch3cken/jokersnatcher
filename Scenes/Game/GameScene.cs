@@ -230,7 +230,6 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
-        inspectionFrame = MakeInspectionFrame();
         TintFaces(Faces, new Color("#58504b"));
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
@@ -543,7 +542,7 @@ public partial class GameScene : Node2D
 
     private const float RivalScale = 1.35f, PlayerScale = 2.05f;
 
-    private void DrawRoom()
+    public override void _Draw()
     {
         Layer(BackgroundArt);
         Layer(PartyShadow);
@@ -553,11 +552,6 @@ public partial class GameScene : Node2D
         Layer(FaceArt);
         Layer(SleeveBase);
         Layer(TableArt);
-    }
-
-    public override void _Draw()
-    {
-        DrawRoom();
         Layer(GlassArt);
         DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
@@ -600,44 +594,18 @@ public partial class GameScene : Node2D
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
     }
 
-    private Texture2D inspectionFrame;
-    private static readonly Color OutsideLens = new("#171524");
-    private const int LensRadius = 70, LensRim = 4, LensPixel = 4;
-    private const float InspectionScale = 0.64f;
-    private static readonly Vector2 GlassCentre = Vector2.One * (LensRadius + LensRim);
-
-    private Texture2D MakeInspectionFrame()
-    {
-        int extent = (LensRadius + LensRim) * 2 + 15;
-        var frame = Image.CreateEmpty(extent, extent, false, Image.Format.Rgba8);
-        Color teal = new("#1c6b78"), shadow = new("#0f4747");
-        for (int y = 0; y < extent; y++)
-        for (int x = 0; x < extent; x++)
-        {
-            Vector2 d = new Vector2(x + 0.5f, y + 0.5f) - GlassCentre;
-            float r = d.Length();
-            bool handle = d.X > 0 && d.Y > 0 && Mathf.Abs(d.X - d.Y) < 6 && d.X + d.Y < 160;
-            Color color = r < LensRadius ? Colors.Transparent :
-                r < LensRadius + LensRim ? (d.Y < -r * 0.35f ? shadow : teal) :
-                handle ? teal : OutsideLens;
-            frame.SetPixel(x, y, color);
-        }
-        return ImageTexture.CreateFromImage(frame);
-    }
     private void DrawMagnifier()
     {
         Vector2 lens = new(480, 300);
         Rect2 viewport = GetViewportRect();
         Transform2D toLocal = GetGlobalTransformWithCanvas().AffineInverse();
         Vector2 corner = toLocal * viewport.Position;
-        Rect2 screen = new Rect2(corner, toLocal * viewport.End - corner).Grow(1);
-        DrawRect(screen, OutsideLens);
-        const float zoom = 1.85f;
-        DrawSetTransform(lens - new Vector2(566, 287) * zoom, 0, Vector2.One * zoom);
-        DrawRoom();
-        DrawReachingArm();
-        if (reachTime < 0 && PalmArt != null)
-            DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
+        DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color("#171524"));
+        DrawSetTransform(lens, 0, new Vector2(1.10f, 1));
+        DrawCircle(Vector2.Zero, 409, new Color("#b8b0c7"), true, -1, true);
+        DrawCircle(Vector2.Zero, 401, new Color("#45445f"), true, -1, true);
+        DrawArc(Vector2.Zero, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
+
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
@@ -651,10 +619,9 @@ public partial class GameScene : Node2D
             float y = Mathf.Clamp(-35 + (card.Position.Y - 287) * (44f / 31), -65, 100);
             float angle = Mathf.Clamp(card.Angle / (half * 0.102f), -1, 1) * 0.19f;
             // Keep even the tilted outer corners of a moving card within the lens.
-            float radius = (LensRadius - 1) * LensPixel / InspectionScale;
-            float maxX = Mathf.Sqrt(radius * radius - Mathf.Pow(Mathf.Abs(y) + 135, 2)) - 101;
+            float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
-            DrawSetTransform(lens + new Vector2(x, y) * InspectionScale, angle, Vector2.One * (1.85f * InspectionScale));
+            DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
             if (card.Rank == 0)
             {
                 DrawRect(bounds.Grow(5), new Color("#ffcc7066"));
@@ -676,20 +643,9 @@ public partial class GameScene : Node2D
         foreach (Card card in discarding)
             if (card.LeavingRivalHand) DrawLiveCard(card);
         if (carried != null && paw.Y < 355) DrawLiveCard(carried);
-        DrawSetTransform(lens + new Vector2(0, 104) * InspectionScale, 0, Vector2.One * InspectionScale);
+        DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-        Rect2 frame = new(lens - GlassCentre * LensPixel, inspectionFrame.GetSize() * LensPixel);
-        DrawTextureRect(inspectionFrame, frame, false);
-        // Cover any room pixels beyond the sprite on wide or tall windows.
-        if (screen.Position.X < frame.Position.X)
-            DrawRect(new Rect2(screen.Position, new Vector2(frame.Position.X - screen.Position.X, screen.Size.Y)), OutsideLens);
-        if (screen.End.X > frame.End.X)
-            DrawRect(new Rect2(frame.End.X, screen.Position.Y, screen.End.X - frame.End.X, screen.Size.Y), OutsideLens);
-        if (screen.Position.Y < frame.Position.Y)
-            DrawRect(new Rect2(screen.Position, new Vector2(screen.Size.X, frame.Position.Y - screen.Position.Y)), OutsideLens);
-        if (screen.End.Y > frame.End.Y)
-            DrawRect(new Rect2(screen.Position.X, frame.End.Y, screen.Size.X, screen.End.Y - frame.End.Y), OutsideLens);
     }
     private void Paint(Card card, bool hidden)
     {
