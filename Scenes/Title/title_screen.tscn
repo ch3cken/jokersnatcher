@@ -107,6 +107,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_script")
+CatRiseSpeed = 70.0
 
 [node name="Background" type="TextureRect" parent="." unique_id=2091459757]
 texture_filter = 1
@@ -231,6 +232,7 @@ offset_left = 48.0
 offset_top = 36.0
 offset_right = 1104.0
 offset_bottom = 146.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 80
 text = "Joker Snatcher"
 horizontal_alignment = 1
