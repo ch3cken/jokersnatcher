@@ -201,8 +201,20 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
-        foreach (int rank in new[] { 3, 7, 1, 5, 3, 6, 8, 7, 3, 9 }) mine.Add(new Card(rank));
-        foreach (int rank in new[] { 2, 6, 4, 10, 0, 5, 8, 9, 2, 6 }) rival.Add(new Card(rank));
+        var deck = new List<Card>(20);
+        for (int rank = 1; rank <= 10; rank++)
+        {
+            deck.Add(new Card(rank));
+            deck.Add(new Card(rank));
+        }
+        for (int i = deck.Count - 1; i > 0; i--)
+        {
+            int j = rng.RandiRange(0, i);
+            (deck[i], deck[j]) = (deck[j], deck[i]);
+        }
+        mine.AddRange(deck.GetRange(0, 10));
+        rival.AddRange(deck.GetRange(10, 10));
+        rival.Insert(rng.RandiRange(0, rival.Count), new Card(0));
         Fit();
         Layout(1);
     }
