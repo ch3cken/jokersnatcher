@@ -418,8 +418,14 @@ public partial class GameScene : Node2D
     private const float PlayerFanRadius = 298, RivalFanRadius = 251;
     private const float RivalFanCenterX = 612;
 
-    private static float FanStep(int total, bool upper) =>
-        Mathf.Min(upper ? 0.116f : 0.124f, 1.37f / Mathf.Max(1, total - 1));
+    private static float FanStep(int total, bool upper)
+    {
+        int gaps = Mathf.Max(1, total - 1);
+        // Keep the opening deal's spacing, then widen each gap gradually as cards leave.
+        float openingGaps = upper ? 10 : 9;
+        float openingStep = upper ? 0.116f : 0.124f;
+        return Mathf.Min(openingStep * Mathf.Sqrt(openingGaps / gaps), 1.37f / gaps);
+    }
 
     private static float SlotAngle(int i, int total, bool upper) =>
         (i - (total - 1) * 0.5f) * FanStep(total, upper);
@@ -477,6 +483,7 @@ public partial class GameScene : Node2D
             bool opening = receiving || shuffling || (!upper && held != null && !fromRival);
             int openAt = receiving ? RivalGapIndex : shuffling ? RivalShuffleIndex() : gap;
             int slots = count + (opening && !shuffling ? 1 : 0);
+            float spreadScale = 1f + 0.65f * Mathf.Clamp((slots - 5) / 5f, 0f, 1f);
             int landing = receiving || shuffling ? openAt : -1;
             if (upper && landing < 0 && landingGlow > 0 && landedCard != null && landedCard != held)
             {
@@ -491,6 +498,11 @@ public partial class GameScene : Node2D
                 if (card == held) continue;
                 if (shuffling && card == targetCard) continue;
                 if (opening && i == openAt) i++;
+                if (!upper && card == pendingPair)
+                {
+                    i++;
+                    continue;
+                }
                 if (upper && card == targetCard && move is (Move.Pair or Move.Shuffle) && reachTime >= 0.32f)
                 {
                     i++;
@@ -501,20 +513,20 @@ public partial class GameScene : Node2D
                 {
                     int distance = i - openAt;
                     float spread = Mathf.Max(0, 36 - 9 * Mathf.Abs(distance));
-                    angle += Mathf.Sign(distance) * spread / PlayerFanRadius;
+                    angle += Mathf.Sign(distance) * spread * spreadScale / PlayerFanRadius;
                 }
                 else if (landing >= 0)
                 {
                     int distance = i - landing;
                     float strength = receiving || shuffling ? 1 : landingGlow;
                     float spread = Mathf.Max(0, 43 - 10 * Mathf.Abs(distance)) * strength;
-                    angle += Mathf.Sign(distance) * spread / RivalFanRadius;
+                    angle += Mathf.Sign(distance) * spread * spreadScale / RivalFanRadius;
                 }
                 else if (focus >= 0)
                 {
                     int distance = i - focus;
                     float arcLength = Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
-                    angle += arcLength / (upper ? RivalFanRadius : PlayerFanRadius);
+                    angle += arcLength * spreadScale / (upper ? RivalFanRadius : PlayerFanRadius);
                 }
                 Vector2 offset = card.Position - FanPosition(card.Angle, slots, upper);
                 Vector2 targetOffset = i == focus ? Vector2.Up.Rotated(angle) * HoverLift : Vector2.Zero;
@@ -599,7 +611,7 @@ public partial class GameScene : Node2D
             Aim();
             if (fromRival)
             {
-                if (pointer.Y >= 355 && pointer.Y <= 600 && pointer.X >= 0 && pointer.X <= 960)
+                if (pointer.DistanceSquaredTo(pressPoint) >= RivalDrawDistance * RivalDrawDistance)
                 {
                     rival.Remove(held);
                     int slot = rng.RandiRange(0, mine.Count);
@@ -638,6 +650,7 @@ public partial class GameScene : Node2D
     }
 
     private Card pendingPair;
+    private const float RivalDrawDistance = 75;
 
     private void Aim()
     {
@@ -650,7 +663,7 @@ public partial class GameScene : Node2D
         if (fromRival)
         {
             // Move the supporting arc between hands while the stolen card is in transit.
-            float travel = Mathf.SmoothStep(0, 1, Mathf.Clamp((pointer.Y - pressPoint.Y) / 150f, 0, 1));
+            float travel = Mathf.SmoothStep(0, 1, Mathf.Clamp(pointer.DistanceTo(pressPoint) / RivalDrawDistance, 0, 1));
             center = center.Lerp(FanCenter(mine.Count + 1, false), travel);
             radius = Mathf.Lerp(radius, PlayerFanRadius, travel);
             outer = Mathf.Lerp(outer, SlotAngle(mine.Count, mine.Count + 1, false), travel);
@@ -662,16 +675,20 @@ public partial class GameScene : Node2D
 
         int source = mine.IndexOf(held);
         int nextGap = Mathf.Clamp(Mathf.FloorToInt(angle / FanStep(count, false) + count * 0.5f), 0, count - 1);
-        if (!dragged) return;
-        gap = nextGap;
-        if (held.Rank == 0 || source == gap) return;
-        // Map the two neighbours of the insertion gap back into the original list.
-        for (int neighbour = gap - 1; neighbour <= gap; neighbour++)
+        gap = dragged ? nextGap : source;
+        if (held.Rank == 0) return;
+        float fanIndex = angle / FanStep(count, false) + (count - 1) * 0.5f;
+        float nearest = float.PositiveInfinity;
+        for (int index = 0; index < count; index++)
         {
-            int index = neighbour < source ? neighbour : neighbour + 1;
-            if (index < 0 || index >= count || mine[index].Rank != held.Rank) continue;
+            if (index == source || mine[index].Rank != held.Rank) continue;
+            int remainingIndex = index < source ? index : index - 1;
+            // A click pairs only immediate neighbours; dragging allows a margin around their gaps.
+            float distance = Mathf.Min(Mathf.Abs(fanIndex - remainingIndex), Mathf.Abs(fanIndex - remainingIndex - 1));
+            if (!dragged && Mathf.Abs(index - source) != 1) continue;
+            if (dragged && distance > 0.95f || distance >= nearest) continue;
+            nearest = distance;
             pendingPair = mine[index];
-            break;
         }
     }
 
