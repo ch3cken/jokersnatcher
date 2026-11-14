@@ -12,84 +12,103 @@
 [ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="9_xruoh"]
 [ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="10_72lsw"]
 [ext_resource type="FontFile" uid="uid://d4bdx051x347b" path="res://COMIC.TTF" id="11_xsi77"]
+[ext_resource type="Texture2D" uid="uid://cqqygksxg2mxd" path="res://Art/Used/buttons/easy.png" id="12_easy"]
+[ext_resource type="Texture2D" uid="uid://xuffo4fhg6g7" path="res://Art/Used/buttons/easy pressed.png" id="13_easy_pressed"]
+[ext_resource type="Texture2D" uid="uid://03v1adckuv76" path="res://Art/Used/buttons/normal.png" id="14_normal"]
+[ext_resource type="Texture2D" uid="uid://b01nixh6nq0d5" path="res://Art/Used/buttons/normal pressed.png" id="15_normal_pressed"]
+[ext_resource type="Texture2D" uid="uid://cpbdwqbakdxu3" path="res://Art/Used/buttons/hard.png" id="16_hard"]
+[ext_resource type="Texture2D" uid="uid://dki3rn16i3u1o" path="res://Art/Used/buttons/hard pressed.png" id="17_hard_pressed"]
+[ext_resource type="Texture2D" uid="uid://bs47fhcgm4d42" path="res://Art/Used/buttons/setting.png" id="18_setting"]
+[ext_resource type="Texture2D" uid="uid://tiuy7k1geofi" path="res://Art/Used/buttons/setting pressed.png" id="19_setting_pressed"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_hover"]
-bg_color = Color(0.3, 0.34, 0.44, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.65, 0.72, 0.88, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_normal"]
-bg_color = Color(0.22, 0.25, 0.32, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.45, 0.5, 0.62, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_easy"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("12_easy")
+region_rect = Rect2(7, 180, 98, 31)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_pressed"]
-bg_color = Color(0.15, 0.17, 0.22, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.45, 0.5, 0.62, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_easy_pressed"]
+content_margin_left = 40.0
+content_margin_top = 15.0
+content_margin_right = 40.0
+texture = ExtResource("13_easy_pressed")
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_normal"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("14_normal")
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_normal_pressed"]
+content_margin_left = 40.0
+content_margin_top = 15.0
+content_margin_right = 40.0
+texture = ExtResource("15_normal_pressed")
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hard"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("16_hard")
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hard_pressed"]
+content_margin_left = 40.0
+content_margin_top = 15.0
+content_margin_right = 40.0
+texture = ExtResource("17_hard_pressed")
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_setting"]
+texture = ExtResource("18_setting")
+region_rect = Rect2(325, 182, 30, 26)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_setting_pressed"]
+texture = ExtResource("19_setting_pressed")
+region_rect = Rect2(325, 182, 30, 26)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_easy_hover"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("12_easy")
+modulate_color = Color(1.35, 1.35, 1.35, 1)
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_normal_hover"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("14_normal")
+modulate_color = Color(1.35, 1.35, 1.35, 1)
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_hard_hover"]
+content_margin_left = 40.0
+content_margin_right = 40.0
+content_margin_bottom = 14.0
+texture = ExtResource("16_hard")
+modulate_color = Color(1.35, 1.35, 1.35, 1)
+region_rect = Rect2(7, 180, 98, 31)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_setting_hover"]
+texture = ExtResource("18_setting")
+modulate_color = Color(1.35, 1.35, 1.35, 1)
+region_rect = Rect2(325, 182, 30, 26)
 
 [sub_resource type="Theme" id="Theme_difficulty_buttons"]
-Button/font_sizes/font_size = 24
-Button/styles/hover = SubResource("StyleBoxFlat_rect_hover")
-Button/styles/normal = SubResource("StyleBoxFlat_rect_normal")
-Button/styles/pressed = SubResource("StyleBoxFlat_rect_pressed")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_normal"]
-bg_color = Color(0.22, 0.25, 0.32, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.45, 0.5, 0.62, 1)
-corner_radius_top_left = 32
-corner_radius_top_right = 32
-corner_radius_bottom_right = 32
-corner_radius_bottom_left = 32
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_pressed"]
-bg_color = Color(0.15, 0.17, 0.22, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.45, 0.5, 0.62, 1)
-corner_radius_top_left = 32
-corner_radius_top_right = 32
-corner_radius_bottom_right = 32
-corner_radius_bottom_left = 32
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_hover"]
-bg_color = Color(0.3, 0.34, 0.44, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.65, 0.72, 0.88, 1)
-corner_radius_top_left = 32
-corner_radius_top_right = 32
-corner_radius_bottom_right = 32
-corner_radius_bottom_left = 32
+Button/colors/font_color = Color(0.16, 0.12, 0.1, 1)
+Button/colors/font_focus_color = Color(0.16, 0.12, 0.1, 1)
+Button/colors/font_hover_color = Color(0.16, 0.12, 0.1, 1)
+Button/colors/font_hover_pressed_color = Color(0.16, 0.12, 0.1, 1)
+Button/colors/font_pressed_color = Color(0.16, 0.12, 0.1, 1)
+Button/font_sizes/font_size = 32
 
 [sub_resource type="StyleBox" id="StyleBox_callout_popup"]
 resource_local_to_scene = false
@@ -190,45 +209,62 @@ expand_mode = 1
 stretch_mode = 6
 
 [node name="DifficultyButtons" type="HBoxContainer" parent="." unique_id=1418640760]
+texture_filter = 1
 layout_mode = 0
-offset_left = 48.0
-offset_top = 534.0
-offset_right = 1104.0
-offset_bottom = 598.0
+offset_left = 24.0
+offset_top = 528.0
+offset_right = 1128.0
+offset_bottom = 624.0
 theme = SubResource("Theme_difficulty_buttons")
 theme_override_constants/separation = 32
 alignment = 1
 
 [node name="EasyButton" type="Button" parent="DifficultyButtons" unique_id=1518661455]
-custom_minimum_size = Vector2(180, 60)
+custom_minimum_size = Vector2(294, 93)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 8
 theme_override_fonts/font = ExtResource("11_xsi77")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/hover = SubResource("StyleBoxTexture_easy_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_easy_pressed")
+theme_override_styles/normal = SubResource("StyleBoxTexture_easy")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_easy_pressed")
 text = "Easy"
 
 [node name="NormalButton" type="Button" parent="DifficultyButtons" unique_id=1962110241]
-custom_minimum_size = Vector2(180, 60)
+custom_minimum_size = Vector2(294, 93)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 8
 theme_override_fonts/font = ExtResource("11_xsi77")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/hover = SubResource("StyleBoxTexture_normal_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_normal_pressed")
+theme_override_styles/normal = SubResource("StyleBoxTexture_normal")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_normal_pressed")
 text = "Normal"
 
 [node name="HardButton" type="Button" parent="DifficultyButtons" unique_id=361955009]
-custom_minimum_size = Vector2(180, 60)
+custom_minimum_size = Vector2(294, 93)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 8
 theme_override_fonts/font = ExtResource("11_xsi77")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/hover = SubResource("StyleBoxTexture_hard_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_hard_pressed")
+theme_override_styles/normal = SubResource("StyleBoxTexture_hard")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_hard_pressed")
 text = "Hard"
 
 [node name="SettingsButton" type="Button" parent="DifficultyButtons" unique_id=942626994]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(90, 78)
 layout_mode = 2
+size_flags_vertical = 8
 tooltip_text = "Settings"
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_circle_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_circle_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_circle_hover")
-text = "⚙"
+theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
+theme_override_styles/hover = SubResource("StyleBoxTexture_setting_hover")
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_setting_pressed")
+theme_override_styles/normal = SubResource("StyleBoxTexture_setting")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_setting_pressed")
 
 [node name="TitleLabel" type="Label" parent="." unique_id=885945664]
 layout_mode = 0
