@@ -13,12 +13,23 @@ public partial class GameScene : Node2D
     [Export] public Texture2D PalmArt { get; set; }
     [Export] public Texture2D BodyArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
-    [Export] public Texture2D ArmArt { get; set; }
+    [Export] public Texture2D BackgroundArt { get; set; }
+    [Export] public Texture2D PartyArt { get; set; }
+    [Export] public Texture2D PartyShadow { get; set; }
+    [Export] public Texture2D LampArt { get; set; }
+    [Export] public Texture2D FaceArt { get; set; }
+    [Export] public Texture2D SleeveBase { get; set; }
+    [Export] public Texture2D SupportArt { get; set; }
+    [Export] public Texture2D ClosedHandArt { get; set; }
+    [Export] public Texture2D PlayerSupport { get; set; }
+    [Export] public Texture2D ThumbArt { get; set; }
+    [Export] public Texture2D[] SecondFaces { get; set; } = new Texture2D[11];
     [Export] public Texture2D RivalPawArt { get; set; }
 
-    private sealed class Card(int rank)
+    private sealed class Card(int rank, bool second = false)
     {
         public readonly int Rank = rank;
+        public readonly bool Second = second;
         public Vector2 Position;
         public float Angle;
         public bool LeavingRivalHand;
@@ -31,7 +42,7 @@ public partial class GameScene : Node2D
     private readonly List<Card> discarding = new();
     private Card held, match, hoveredRival;
     private bool fromRival, inspecting;
-    private static readonly Rect2 GlassBounds = new(684, 439, 139, 113);
+    private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
     private Vector2 pressPoint;
     private bool dragged;
     private int gap;
@@ -40,7 +51,7 @@ public partial class GameScene : Node2D
     private OpponentAI ai;
     private Move move;
     private Card destinationCard;
-    private static readonly Vector2 Shoulder = new(420, 214), ArmRest = new(369, 167);
+    private static readonly Vector2 Shoulder = new(415, 291), ArmRest = new(355, 241);
     private const float CatchTime = 0.55f, ReturnStart = 0.68f,
         DepositTime = 1.17f, RestTime = 1.42f;
     private Vector2 paw = ArmRest, reachEnd, deposit;
@@ -161,40 +172,31 @@ public partial class GameScene : Node2D
 
     private static float ForegroundScale(float y) => 1 + 0.65f * Phase(y, 205, 505);
 
-    private void Sleeve(Vector2 start, Vector2 bend, Vector2 end, bool approaching = false)
+    private void Layer(Texture2D texture)
     {
-        if (ArmArt == null) return;
-        const int steps = 12;
-        const int side = steps + 1;
-        var outline = new Vector2[2 * side];
-        var uv = new Vector2[2 * side];
-        for (int i = 0; i <= steps; i++)
-        {
-            float t = (float)i / steps;
-            Vector2 a = start.Lerp(bend, t), b = bend.Lerp(end, t);
-            Vector2 normal = (b - a).Normalized().Orthogonal() * Mathf.Lerp(18, 15, t);
-            Vector2 point = a.Lerp(b, t);
-            if (approaching) normal *= ForegroundScale(point.Y);
-            int opposite = 2 * side - 1 - i;
-            outline[i] = point + normal;
-            outline[opposite] = point - normal;
-            uv[i] = new(0, t);
-            uv[opposite] = new(1, t);
-        }
-        for (int i = 0; i < steps; i++)
-        {
-            int j = outline.Length - 1 - i;
-            DrawPrimitive(new[] { outline[i], outline[i+1], outline[j] },
-                new[] { Colors.White }, new[] { uv[i], uv[i+1], uv[j] }, ArmArt);
-            DrawPrimitive(new[] { outline[i+1], outline[j-1], outline[j] },
-                new[] { Colors.White }, new[] { uv[i+1], uv[j-1], uv[j] }, ArmArt);
-        }
+        if (texture != null) DrawTextureRect(texture, new Rect2(0, 0, 960, 600), false);
     }
 
-    private void DrawShoulder()
+    private Texture2D Face(Card card)
     {
-        Vector2 elbow = Shoulder.Lerp(paw, 0.55f) + new Vector2(-36, 62);
-        Sleeve(Shoulder, elbow, paw, approaching: true);
+        var images = card.Second ? SecondFaces : Faces;
+        return images != null && card.Rank < images.Length ? images[card.Rank] : null;
+    }
+
+    private void DrawReachingArm()
+    {
+        if (reachTime < 0) return;
+        Vector2 bend = Shoulder.Lerp(paw, 0.45f) + new Vector2(-36, 45);
+        Vector2 previous = Shoulder;
+        for (int i = 0; i < 12; i++)
+        {
+            float t = i / 11f;
+            Vector2 point = Shoulder.Lerp(bend, t).Lerp(bend.Lerp(paw, t), t);
+            float radius = 16 * ForegroundScale(point.Y);
+            if (i > 0) DrawLine(previous, point, new Color("#efc797"), radius * 2);
+            DrawCircle(point, radius, new Color("#efc797"));
+            previous = point;
+        }
     }
     private void CheckResult()
     {
@@ -215,12 +217,36 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
+        TintFaces(Faces);
+        TintFaces(SecondFaces);
         AddChild(retry);
         retry.AddThemeFontSizeOverride("font_size", 22);
         retry.Pressed += StartRound;
         StartRound();
     }
 
+    // Palette-map the supplied card illustrations once; keep their suits and lettering.
+    private static void TintFaces(Texture2D[] faces)
+    {
+        if (faces == null) return;
+        for (int i = 0; i < faces.Length; i++)
+        {
+            if (faces[i] == null) continue;
+            Image image = faces[i].GetImage();
+            if (image.IsCompressed()) image.Decompress();
+            image.Resize(76, 120, Image.Interpolation.Lanczos);
+            Color paper = new("#f7e2c4"), ink = new("#ac805d");
+            for (int y = 0; y < image.GetHeight(); y++)
+            for (int x = 0; x < image.GetWidth(); x++)
+            {
+                Color pixel = image.GetPixel(x, y);
+                Color tint = ink.Lerp(paper, Mathf.Min(pixel.R, Mathf.Min(pixel.G, pixel.B)));
+                tint.A = pixel.A;
+                image.SetPixel(x, y, tint);
+            }
+            faces[i] = ImageTexture.CreateFromImage(image);
+        }
+    }
     private void StartRound()
     {
         retry.Hide();
@@ -240,7 +266,7 @@ public partial class GameScene : Node2D
         for (int rank = 1; rank <= 10; rank++)
         {
             deck.Add(new Card(rank));
-            deck.Add(new Card(rank));
+            deck.Add(new Card(rank, true));
         }
         for (int i = deck.Count - 1; i > 0; i--)
         {
@@ -278,8 +304,8 @@ public partial class GameScene : Node2D
     {
         float t = i - (total - 1) / 2f;
         float arc = Mathf.Pow(t / Mathf.Max(1, (total - 1) / 2f), 2);
-        return new((upper ? 505 : 300) + t * Mathf.Min(upper ? 19 : 29, 470f / Mathf.Max(1, total - 1)),
-                   upper ? 198 + arc * 18 : 484 + arc * 23);
+        return new((upper ? 566 : 206) + t * Mathf.Min(upper ? 21 : 28, 470f / Mathf.Max(1, total - 1)),
+                   upper ? 287 + arc * 31 : 386 + arc * 49);
     }
 
     // The dragged rival card still belongs to the list but occupies no visible slot.
@@ -298,9 +324,9 @@ public partial class GameScene : Node2D
         // Resting positions keep the cursor on the same card while its neighbours slide.
         for (int i = rival.Count - 1; i >= 0; i--)
         {
-            float angle = (i - (rival.Count - 1) / 2f) * 0.072f;
+            float angle = (i - (rival.Count - 1) / 2f) * 0.102f;
             Vector2 local = (pointer - Slot(i, rival.Count, true)).Rotated(-angle);
-            if (bounds.HasPoint(local)) return rival[i];
+            if (bounds.HasPoint(local / RivalScale)) return rival[i];
         }
         return null;
     }
@@ -322,7 +348,7 @@ public partial class GameScene : Node2D
                 for (int n = 0; n < count; n++)
                 {
                     Vector2 local = pointer - Slot(n, count, false);
-                    if (bounds.Grow(9).HasPoint(local)) focus = n;
+                    if (bounds.Grow(5).HasPoint(local / PlayerScale)) focus = n;
                 }
             }
             int i = 0;
@@ -340,7 +366,7 @@ public partial class GameScene : Node2D
                     if (!upper && distance == 0) destination.Y -= 8;
                 }
                 card.Position = card.Position.Lerp(destination, weight);
-                card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * (upper ? 0.072f : 0.022f), weight);
+                card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * (upper ? 0.102f : 0.115f), weight);
                 i++;
             }
         }
@@ -348,7 +374,7 @@ public partial class GameScene : Node2D
 
     private Card Pick(List<Card> cards)
     {
-        return cards.LastOrDefault(c => c != held && bounds.HasPoint((pointer - c.Position).Rotated(-c.Angle)));
+        return cards.LastOrDefault(c => c != held && bounds.HasPoint((pointer - c.Position).Rotated(-c.Angle) / (cards == rival ? RivalScale : PlayerScale)));
     }
 
     public override void _Input(InputEvent input)
@@ -438,7 +464,7 @@ public partial class GameScene : Node2D
         {
             var probe = pointer + offset;
             var top = mine.LastOrDefault(c => c != held &&
-                bounds.HasPoint((probe - c.Position).Rotated(-c.Angle)));
+                bounds.HasPoint((probe - c.Position).Rotated(-c.Angle) / PlayerScale));
             if (top?.Rank != held.Rank || offset.LengthSquared() >= best) continue;
             best = offset.LengthSquared();
             closest = top;
@@ -468,37 +494,40 @@ public partial class GameScene : Node2D
         tween.TweenCallback(Callable.From(() => discarding.Remove(card)));
     }
 
+    private const float RivalScale = 1.35f, PlayerScale = 2.05f;
+
     public override void _Draw()
     {
-        DrawRect(new Rect2(0, 0, 960, 600), Ink);
-        DrawRect(new Rect2(0,295,960,305), new Color("#48446b"));
-        if (TableArt != null) DrawTextureRect(TableArt,new Rect2(0,0,960,600),false);
-        if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
-        if (GlassArt != null) DrawTextureRect(GlassArt, GlassBounds, false);
-        DrawShoulder();
+        Layer(BackgroundArt);
+        Layer(PartyShadow);
+        Layer(PartyArt);
+        Layer(LampArt);
+        Layer(BodyArt);
+        Layer(FaceArt);
+        Layer(SleeveBase);
+        Layer(TableArt);
+        Layer(GlassArt);
+        DrawReachingArm();
         foreach (var card in rival) if (card != held) Paint(card, true);
-        if (RivalPawArt != null)
-        {
-            DrawSetTransform(new Vector2(565, 257), Mathf.Pi, Vector2.One);
-            DrawTextureRect(RivalPawArt, new Rect2(-35, -28, 70, 56), false);
-            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-        }
+        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(517,314,117,104), false);
+        if (reachTime < 0 && PalmArt != null)
+            DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
+        if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
         foreach (var card in mine) if (card != held) Paint(card, false);
+        if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
         if (carried != null) Paint(carried, false);
-        var activePaw = reachTime < 0 || reachTime >= DepositTime ? PalmArt : RivalPawArt;
-        if (activePaw != null)
+        if (reachTime >= 0 && RivalPawArt != null)
         {
-            Vector2 size = new Vector2(66, 58) * ForegroundScale(paw.Y);
-            DrawTextureRect(activePaw, new Rect2(paw - size / 2, size), false);
+            Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y);
+            DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
-        if (HandArt != null)
+        var hand = held == null ? HandArt : ClosedHandArt;
+        if (hand != null)
         {
-            Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(738,341);
-            DrawTextureRect(HandArt,new Rect2(tip - new Vector2(6,25),new Vector2(126,105)),false);
-            // The other paw supports the player hand from underneath.
-            DrawTextureRect(HandArt,new Rect2(204,520,162,135),false);
+            Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(395,410);
+            DrawTextureRect(hand,new Rect2(tip - new Vector2(28,25),new Vector2(277,217)),false);
         }
         if (inspecting && result == null) DrawMagnifier();
         if (countdown > 0 || result != null)
@@ -517,15 +546,15 @@ public partial class GameScene : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
-        float tableSpacing = Mathf.Min(19, 470f / Mathf.Max(1, count - 1));
+        float tableSpacing = Mathf.Min(21, 470f / Mathf.Max(1, count - 1));
         float lensSpacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
 
         // Project the animated table pose, including cards between slots.
         void DrawLiveCard(Card card)
         {
-            float x = Mathf.Clamp((card.Position.X - 505) / tableSpacing * lensSpacing, -320, 320);
-            float y = Mathf.Clamp(-35 + (card.Position.Y - 198) * (44f / 18), -65, 100);
-            float angle = Mathf.Clamp(card.Angle / (half * 0.072f), -1, 1) * 0.19f;
+            float x = Mathf.Clamp((card.Position.X - 566) / tableSpacing * lensSpacing, -320, 320);
+            float y = Mathf.Clamp(-35 + (card.Position.Y - 287) * (44f / 31), -65, 100);
+            float angle = Mathf.Clamp(card.Angle / (half * 0.102f), -1, 1) * 0.19f;
             // Keep even the tilted outer corners of a moving card within the lens.
             float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
@@ -536,7 +565,7 @@ public partial class GameScene : Node2D
                 DrawRect(bounds.Grow(2), Gold);
             }
             DrawRect(bounds, new Color("#d9d5e2bd"));
-            Texture2D art = Faces != null && card.Rank < Faces.Length ? Faces[card.Rank] : null;
+            Texture2D art = Face(card);
             if (art != null)
                 DrawTextureRect(art, bounds, false, new Color(1, 1, 1, 0.74f));
             else
@@ -553,18 +582,21 @@ public partial class GameScene : Node2D
         if (moving != null && rival.Contains(moving)) DrawLiveCard(moving);
         foreach (Card card in discarding)
             if (card.LeavingRivalHand) DrawLiveCard(card);
-        if (carried != null && paw.Y < 290) DrawLiveCard(carried);
-        DrawSetTransform(lens + new Vector2(0, 104), Mathf.Pi, Vector2.One);
-        if (RivalPawArt != null) DrawTextureRect(RivalPawArt, new Rect2(-87, -69, 174, 138), false);
+        if (carried != null && paw.Y < 355) DrawLiveCard(carried);
+        DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
+        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
     private void Paint(Card card, bool hidden)
     {
-        DrawSetTransform(card.Position,card.Angle,Vector2.One);
-        DrawRect(bounds.Grow(2), Ink);
-        DrawRect(bounds,hidden ? new Color("#85607d") : Paper);
-        Texture2D tex = hidden ? Back : Faces != null && card.Rank < Faces.Length ? Faces[card.Rank] : null;
-        if (tex != null) DrawTextureRect(tex,bounds,false);
+        DrawSetTransform(card.Position,card.Angle,Vector2.One * (hidden ? RivalScale : PlayerScale));
+
+        Texture2D tex = hidden ? Back : Face(card);
+        if (tex != null)
+        {
+            DrawTextureRect(tex, bounds, false);
+            if (!hidden) DrawRect(bounds, new Color("#c29b75"), false, 0.8f);
+        }
         else if (hidden)
         {
             DrawRect(bounds.Grow(-5),Gold,false,2);

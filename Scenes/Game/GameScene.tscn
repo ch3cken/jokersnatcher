@@ -1,18 +1,92 @@
 [gd_scene format=3 uid="uid://bk7dfv62diywg"]
 
-[ext_resource type="Script" uid="uid://c4xuqehrmly7q" path="res://Scenes/Game/GameScene.cs" id="1"]
-[ext_resource type="Texture2D" uid="uid://2y7qx68shwhp" path="res://Art/Placeholders/Arm.svg" id="Arm"]
-[ext_resource type="Texture2D" uid="uid://lqwh04bdcpq1" path="res://Art/Placeholders/Body.svg" id="Body"]
-[ext_resource type="Texture2D" uid="uid://do38q0cmec6ey" path="res://Art/Placeholders/Glass.svg" id="Glass"]
-[ext_resource type="Texture2D" uid="uid://drsfjgc5ukhpi" path="res://Art/Placeholders/RivalPalm.svg" id="Palm"]
-[ext_resource type="Texture2D" uid="uid://8gehsf6tvwgm" path="res://Art/Placeholders/PlayerPaw.svg" id="PlayerPaw"]
-[ext_resource type="Texture2D" uid="uid://b6c31js0fiexa" path="res://Art/Placeholders/RivalPaw.svg" id="RivalPaw"]
+[ext_resource type="Script" path="res://Scenes/Game/GameScene.cs" id="1"]
+[ext_resource type="Texture2D" path="res://Art/Used/background.png" id="BackgroundArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/shadow.png" id="PartyShadow"]
+[ext_resource type="Texture2D" path="res://Art/Used/party.png" id="PartyArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/object.png" id="LampArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/table.png" id="TableArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/glass.png" id="GlassArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/cat.png" id="BodyArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face.png" id="FaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/arm1.png" id="SleeveBase"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/hand.png" id="PalmArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/snatch hold.png" id="RivalPawArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/card hand.png" id="SupportArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/player/floating.png" id="HandArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/player/floating hold.png" id="ClosedHandArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/player/my hand.png" id="PlayerSupport"]
+[ext_resource type="Texture2D" path="res://Art/Used/player/thumb.png" id="ThumbArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/playable-back.svg" id="Back"]
+[ext_resource type="Texture2D" path="res://cards/Joker.png" id="Joker"]
+[ext_resource type="Texture2D" path="res://cards/Spades1.png" id="Spades1"]
+[ext_resource type="Texture2D" path="res://cards/Spades2.png" id="Spades2"]
+[ext_resource type="Texture2D" path="res://cards/Spades3.png" id="Spades3"]
+[ext_resource type="Texture2D" path="res://cards/Spades4.png" id="Spades4"]
+[ext_resource type="Texture2D" path="res://cards/Spades5.png" id="Spades5"]
+[ext_resource type="Texture2D" path="res://cards/Spades6.png" id="Spades6"]
+[ext_resource type="Texture2D" path="res://cards/Spades7.png" id="Spades7"]
+[ext_resource type="Texture2D" path="res://cards/Spades8.png" id="Spades8"]
+[ext_resource type="Texture2D" path="res://cards/Spades9.png" id="Spades9"]
+[ext_resource type="Texture2D" path="res://cards/Spades10.png" id="Spades10"]
+[ext_resource type="Texture2D" path="res://cards/Hearts1.png" id="Hearts1"]
+[ext_resource type="Texture2D" path="res://cards/Hearts2.png" id="Hearts2"]
+[ext_resource type="Texture2D" path="res://cards/Hearts3.png" id="Hearts3"]
+[ext_resource type="Texture2D" path="res://cards/Hearts4.png" id="Hearts4"]
+[ext_resource type="Texture2D" path="res://cards/Hearts5.png" id="Hearts5"]
+[ext_resource type="Texture2D" path="res://cards/Hearts6.png" id="Hearts6"]
+[ext_resource type="Texture2D" path="res://cards/Hearts7.png" id="Hearts7"]
+[ext_resource type="Texture2D" path="res://cards/Hearts8.png" id="Hearts8"]
+[ext_resource type="Texture2D" path="res://cards/Hearts9.png" id="Hearts9"]
+[ext_resource type="Texture2D" path="res://cards/Hearts10.png" id="Hearts10"]
+
+[sub_resource type="AtlasTexture" id="crop_PalmArt"]
+atlas = ExtResource("PalmArt")
+region = Rect2(152, 77, 40, 58)
+
+[sub_resource type="AtlasTexture" id="crop_RivalPawArt"]
+atlas = ExtResource("RivalPawArt")
+region = Rect2(136, 75, 80, 56)
+
+[sub_resource type="AtlasTexture" id="crop_SupportArt"]
+atlas = ExtResource("SupportArt")
+region = Rect2(194, 115, 44, 38)
+
+[sub_resource type="AtlasTexture" id="crop_HandArt"]
+atlas = ExtResource("HandArt")
+region = Rect2(107, 62, 104, 80)
+
+[sub_resource type="AtlasTexture" id="crop_ClosedHandArt"]
+atlas = ExtResource("ClosedHandArt")
+region = Rect2(126, 72, 85, 70)
+
+[sub_resource type="AtlasTexture" id="crop_PlayerSupport"]
+atlas = ExtResource("PlayerSupport")
+region = Rect2(51, 117, 109, 100)
+
+[sub_resource type="AtlasTexture" id="crop_ThumbArt"]
+atlas = ExtResource("ThumbArt")
+region = Rect2(62, 148, 59, 39)
 
 [node name="GameScene" type="Node2D" unique_id=1890567042]
+texture_filter = 1
 script = ExtResource("1")
-HandArt = ExtResource("PlayerPaw")
-PalmArt = ExtResource("Palm")
-BodyArt = ExtResource("Body")
-GlassArt = ExtResource("Glass")
-ArmArt = ExtResource("Arm")
-RivalPawArt = ExtResource("RivalPaw")
+BackgroundArt = ExtResource("BackgroundArt")
+PartyShadow = ExtResource("PartyShadow")
+PartyArt = ExtResource("PartyArt")
+LampArt = ExtResource("LampArt")
+TableArt = ExtResource("TableArt")
+GlassArt = ExtResource("GlassArt")
+BodyArt = ExtResource("BodyArt")
+FaceArt = ExtResource("FaceArt")
+SleeveBase = ExtResource("SleeveBase")
+PalmArt = SubResource("crop_PalmArt")
+RivalPawArt = SubResource("crop_RivalPawArt")
+SupportArt = SubResource("crop_SupportArt")
+HandArt = SubResource("crop_HandArt")
+ClosedHandArt = SubResource("crop_ClosedHandArt")
+PlayerSupport = SubResource("crop_PlayerSupport")
+ThumbArt = SubResource("crop_ThumbArt")
+Back = ExtResource("Back")
+Faces = Array[Texture2D]([ExtResource("Joker"), ExtResource("Spades1"), ExtResource("Spades2"), ExtResource("Spades3"), ExtResource("Spades4"), ExtResource("Spades5"), ExtResource("Spades6"), ExtResource("Spades7"), ExtResource("Spades8"), ExtResource("Spades9"), ExtResource("Spades10")])
+SecondFaces = Array[Texture2D]([ExtResource("Joker"), ExtResource("Hearts1"), ExtResource("Hearts2"), ExtResource("Hearts3"), ExtResource("Hearts4"), ExtResource("Hearts5"), ExtResource("Hearts6"), ExtResource("Hearts7"), ExtResource("Hearts8"), ExtResource("Hearts9"), ExtResource("Hearts10")])
