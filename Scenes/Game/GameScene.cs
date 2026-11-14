@@ -54,6 +54,10 @@ public partial class GameScene : Node2D
     private readonly List<Card> discarding = new();
     private Card held, hoveredRival, hoveredMine;
     private bool fromRival, inspecting;
+    private float inspectProgress, handOpacity = 1;
+    private float idleTime;
+    private Vector2 playerSway, rivalSway;
+    private bool overLensCards;
     private int playerInspectUses;
     private Texture2D glassSilhouette;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
@@ -401,6 +405,8 @@ public partial class GameScene : Node2D
         discarding.Clear();
         held = hoveredRival = targetCard = carried = destinationCard = null;
         inspecting = dragged = fromRival = false;
+        inspectProgress = 0;
+        handOpacity = 1;
         playerInspectUses = 0;
         move = Move.Wait;
         reachTime = -1;
@@ -433,9 +439,11 @@ public partial class GameScene : Node2D
     private void Fit()
     {
         Vector2 view = GetViewportRect().Size;
-        float scale = Mathf.Min(view.X / 960, view.Y / 600);
-        Scale = Vector2.One * scale;
-        Position = (view - new Vector2(960, 600) * scale) / 2;
+        Vector2 titleSize = new(1152, 648);
+        Vector2 frame = titleSize * Mathf.Min(view.X / titleSize.X, view.Y / titleSize.Y);
+        // Map the entire playable table, including input coordinates, into the title's 16:9 frame.
+        Scale = frame / new Vector2(960, 600);
+        Position = (view - frame) / 2;
     }
 
     public override void _ExitTree()
@@ -447,6 +455,13 @@ public partial class GameScene : Node2D
     {
         Fit();
         pointer = GetLocalMousePosition();
+        idleTime += (float)delta;
+        playerSway = new Vector2(4f * Mathf.Sin(idleTime * 1.45f), 8f * Mathf.Sin(idleTime * 1.85f));
+        rivalSway = new Vector2(4f * Mathf.Sin(idleTime * 1.32f + 1), 8f * Mathf.Sin(idleTime * 1.63f + 2));
+        inspectProgress = Mathf.MoveToward(inspectProgress, inspecting && result == null ? 1 : 0, (float)delta / 0.25f);
+        bool overCards = inspectProgress > 0.5f ? overLensCards :
+            PointerOverHand(mine, PlayerScale) || PointerOverHand(rival, RivalScale);
+        handOpacity = Mathf.Lerp(handOpacity, overCards ? 0.48f : 1, 1 - Mathf.Exp(-24 * (float)delta));
         landingGlow = Mathf.MoveToward(landingGlow, 0, (float)delta / 0.45f);
         bool counting = countdown > 0;
         countdown = Mathf.Max(0, countdown - (float)delta);
@@ -472,6 +487,7 @@ public partial class GameScene : Node2D
             Aim();
         }
         UpdateArm((float)delta);
+        rivalSway.Y += RivalInspectBounce;
         bool canHover = !inspecting && held == null && countdown <= 0 && result == null;
         Card grip = canHover ? RivalGripAtPointer() : null;
         if (lastDropPointer.HasValue && pointer.DistanceSquaredTo(lastDropPointer.Value) > 9)
@@ -604,13 +620,25 @@ public partial class GameScene : Node2D
         }
     }
 
+    private bool PointerOverHand(List<Card> cards, float scale)
+    {
+        foreach (Card card in cards)
+        {
+            bool moving = card == held || (cards == rival && card == targetCard &&
+                move is (Move.Pair or Move.Shuffle) && reachTime >= 0.32f);
+            Vector2 sway = moving ? Vector2.Zero : cards == rival ? rivalSway : playerSway;
+            if (bounds.HasPoint((pointer - card.Position - sway).Rotated(-card.Angle) / scale)) return true;
+        }
+        return false;
+    }
+
     private Card Pick(List<Card> cards)
     {
         bool upper = cards == rival;
         bool receiving = upper && carried != null;
         int slots = cards.Count + (receiving ? 1 : 0);
         if (cards.Count == 0) return null;
-        Vector2 radial = pointer - FanCenter(slots, upper);
+        Vector2 radial = pointer - (upper ? rivalSway : playerSway) - FanCenter(slots, upper);
         float radius = upper ? RivalFanRadius : PlayerFanRadius;
         float halfHeight = -bounds.Position.Y * (upper ? RivalScale : PlayerScale);
         if (radial.Length() < radius - halfHeight || radial.Length() > radius + halfHeight + HoverLift)
@@ -725,6 +753,7 @@ public partial class GameScene : Node2D
 
     private Card pendingPair;
     private const float RivalDrawDistance = 75;
+    private float RivalDrawProgress => Mathf.SmoothStep(0, 1, Mathf.Clamp(pointer.DistanceTo(pressPoint) / RivalDrawDistance, 0, 1));
 
     private void Aim()
     {
@@ -737,7 +766,7 @@ public partial class GameScene : Node2D
         if (fromRival)
         {
             // Move the supporting arc between hands while the stolen card is in transit.
-            float travel = Mathf.SmoothStep(0, 1, Mathf.Clamp(pointer.DistanceTo(pressPoint) / RivalDrawDistance, 0, 1));
+            float travel = RivalDrawProgress;
             center = center.Lerp(FanCenter(mine.Count + 1, false), travel);
             radius = Mathf.Lerp(radius, PlayerFanRadius, travel);
             outer = Mathf.Lerp(outer, SlotAngle(mine.Count, mine.Count + 1, false), travel);
@@ -809,6 +838,9 @@ public partial class GameScene : Node2D
         return hidden < index ? index - 1 : index;
     }
 
+    private float RivalInspectBounce => move == Move.Inspect && reachTime >= 0
+        ? -16f * Mathf.Exp(-6f * reachTime) * Mathf.Sin(20f * reachTime) : 0;
+
     public override void _Draw()
     {
         Layer(BackgroundArt);
@@ -817,7 +849,11 @@ public partial class GameScene : Node2D
         Layer(LampArt);
         bool checking = move == Move.Inspect && reachTime >= 0 && RivalGlassArt != null;
         if (checking)
+        {
+            DrawSetTransform(new Vector2(0, RivalInspectBounce), 0, Vector2.One);
             Layer(RivalGlassArt);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         else
         {
             Layer(BodyArt);
@@ -825,6 +861,8 @@ public partial class GameScene : Node2D
             Layer(SleeveBase);
         }
         Layer(TableArt);
+        float lift = Mathf.SmoothStep(0, 1, inspectProgress);
+        DrawSetTransform(Vector2.Up * (18 * lift), 0, Vector2.One);
         if (playerInspectUses > 0 && glassSilhouette != null)
         {
             bool hovered = held == null && !inspecting && result == null && countdown <= 0 &&
@@ -834,36 +872,50 @@ public partial class GameScene : Node2D
             DrawGlassRim(width, hovered ? new Color("#fff3a1") : new Color("#ffbd38"));
         }
         Layer(GlassArt);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         Layer(GlassIcon);
         DrawInspectUsesCount();
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
-        if (held != null) Paint(held, fromRival);
-        foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
+        bool heldInFront = held != null && fromRival && RivalDrawProgress < 0.5f;
+        if (held != null && !heldInFront) Paint(held, fromRival);
+        foreach (var card in rival) if (card != held && card != lifted) Paint(card, true, rivalSway);
+        DrawSetTransform(rivalSway, 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(533,314,117,104), false);
         if (reachTime < 0 && PalmArt != null)
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
-        if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
-        foreach (var card in mine) if (card != held) Paint(card, false);
-        if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        foreach (var card in mine) if (card != held) Paint(card, false, playerSway);
         foreach (var card in discarding) Paint(card, false);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
         if (carried != null) Paint(carried, false);
         if (!checking && reachTime >= 0 && RivalPawArt != null)
         {
-            Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y);
+            float reachDepth = move == Move.Steal
+                ? Phase(reachTime, 0, CatchTime) * (1 - Phase(reachTime, ReturnStart, DepositTime))
+                : 0;
+            Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y) * (1 + 0.15f * reachDepth);
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
-        if (inspecting && result == null) DrawMagnifier();
+        if (heldInFront) Paint(held, true);
+        DrawSetTransform(playerSway, 0, Vector2.One);
+        if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
+        if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        overLensCards = false;
+        float lensOpacity = Mathf.SmoothStep(0, 1, Mathf.Clamp((inspectProgress - 0.2f) / 0.8f, 0, 1));
+        if (lensOpacity > 0) DrawMagnifier(lensOpacity);
         DrawCenterBanner();
         var hand = held == null ? HandArt : ClosedHandArt;
         if (hand != null && result == null)
         {
-            Vector2 handSize = new(277, 217);
+            Vector2 handSize = new Vector2(277, 217) * (ForegroundScale(pointer.Y) / ForegroundScale(505));
             // Fingertip on the leading (upper-left) digit, in cropped sprite pixels.
             Vector2 fingertip = held == null ? new Vector2(23, 2) : new Vector2(16, 4);
             Vector2 hotspot = (fingertip + new Vector2(0.5f, 0.5f)) * handSize / hand.GetSize();
-            DrawTextureRect(hand, new Rect2(pointer - hotspot, handSize), false);
+            DrawSetTransform(pointer, 0.006f * Mathf.Sin(idleTime * 1.85f), Vector2.One);
+            DrawTextureRect(hand, new Rect2(-hotspot, handSize), false, new Color(1, 1, 1, handOpacity));
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
     }
 
@@ -911,14 +963,16 @@ public partial class GameScene : Node2D
         );
     }
 
-    private void DrawMagnifier()
+    private void DrawMagnifier(float opacity)
     {
-        Vector2 lens = new(480, 300);
+        Vector2 lens = new Vector2(480, 300) + rivalSway * 1.5f;
         Rect2 viewport = GetViewportRect();
         Transform2D toLocal = GetGlobalTransformWithCanvas().AffineInverse();
         Vector2 corner = toLocal * viewport.Position;
-        DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color("#171524"));
-        Layer(MagnifiedBackground);
+        Color tint = new(1, 1, 1, opacity);
+        DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color(0.09f, 0.082f, 0.14f, opacity));
+        Rect2 screen = new(0, 0, 960, 600);
+        if (MagnifiedBackground != null) DrawTextureRect(MagnifiedBackground, screen, false, tint);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
         float step = FanStep(count, true);
@@ -934,7 +988,8 @@ public partial class GameScene : Node2D
             // Keep even the tilted outer corners of a moving card within the lens.
             float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
-            float fade = discarding.Contains(card) ? card.Alpha : 1f;
+            float fade = opacity * (discarding.Contains(card) ? card.Alpha : 1f);
+            overLensCards |= bounds.HasPoint((pointer - lens - new Vector2(x, y)).Rotated(-angle) / 1.85f);
             DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
             if (card.Rank == 0)
             {
@@ -960,16 +1015,16 @@ public partial class GameScene : Node2D
             if (card.LeavingRivalHand) DrawLiveCard(card);
         if (carried != null && carried.Position.Y < 355) DrawLiveCard(carried);
         DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
-        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
+        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false, tint);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-        Layer(MagnifiedFrame);
+        if (MagnifiedFrame != null) DrawTextureRect(MagnifiedFrame, screen, false, tint);
     }
-    private void Paint(Card card, bool hidden)
+    private void Paint(Card card, bool hidden, Vector2 sway = default)
     {
         bool fading = discarding.Contains(card);
         float scale = fading ? card.DrawnScale : card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
         float alpha = fading ? card.Alpha : 1f;
-        DrawSetTransform(card.Position,card.Angle,Vector2.One * scale);
+        DrawSetTransform(card.Position + sway,card.Angle,Vector2.One * scale);
 
         Texture2D tex = hidden ? Back : Face(card);
         if (tex != null)
@@ -995,12 +1050,15 @@ public partial class GameScene : Node2D
             DrawRect(bounds, new Color(1, 0.92f, 0.65f, landingGlow), false, 2);
         }
         bool selected = card == held || (held == null && (card == hoveredMine || card == hoveredRival));
-        bool pair = held != null && card == pendingPair;
-        if (selected || pair)
+        bool matchingRank = held != null && !fromRival && held.Rank > 0 && card != held
+            && card.Rank == held.Rank && mine.Contains(card);
+        if (selected || matchingRank)
         {
             DrawRect(bounds.Grow(2), new Color("#ffb83e66"), false, 3);
             DrawRect(bounds, new Color("#fff1a032"));
             DrawRect(bounds.Grow(-1), new Color("#ffdf86"), false, 2);
+            if (matchingRank && card == pendingPair)
+                DrawRect(bounds.Grow(-2), new Color("#fff5bb"), false, 3);
         }
         DrawSetTransform(Vector2.Zero,0,Vector2.One);
     }
