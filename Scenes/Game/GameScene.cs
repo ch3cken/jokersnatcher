@@ -230,8 +230,9 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
-        TintFaces(Faces);
-        TintFaces(SecondFaces);
+        TintFaces(Faces, new Color("#58504b"));
+        TintFaces(SecondFaces, new Color("#ac6257"));
+        if (Back != null) Back = WarmCardBack(Back);
         AddChild(retry);
         retry.AddThemeFontSizeOverride("font_size", 22);
         retry.Pressed += StartRound;
@@ -239,7 +240,7 @@ public partial class GameScene : Node2D
     }
 
     // Palette-map the supplied card illustrations once; keep their suits and lettering.
-    private static void TintFaces(Texture2D[] faces)
+    private static void TintFaces(Texture2D[] faces, Color suitInk)
     {
         if (faces == null) return;
         for (int i = 0; i < faces.Length; i++)
@@ -248,7 +249,7 @@ public partial class GameScene : Node2D
             Image image = faces[i].GetImage();
             if (image.IsCompressed()) image.Decompress();
             image.Resize(76, 120, Image.Interpolation.Lanczos);
-            Color paper = new("#f7e2c4"), ink = new("#ac805d");
+            Color paper = new("#f7e2c4"), ink = i == 0 ? new Color("#ac805d") : suitInk;
             for (int y = 0; y < image.GetHeight(); y++)
             for (int x = 0; x < image.GetWidth(); x++)
             {
@@ -260,6 +261,22 @@ public partial class GameScene : Node2D
             faces[i] = ImageTexture.CreateFromImage(image);
         }
     }
+    private static Texture2D WarmCardBack(Texture2D source)
+    {
+        Image image = source.GetImage();
+        if (image.IsCompressed()) image.Decompress();
+        image.Resize(152, 240, Image.Interpolation.Lanczos);
+        for (int y = 0; y < image.GetHeight(); y++)
+        for (int x = 0; x < image.GetWidth(); x++)
+        {
+            Color pixel = image.GetPixel(x, y);
+            float light = 0.2126f * pixel.R + 0.7152f * pixel.G + 0.0722f * pixel.B;
+            Color muted = pixel.Lerp(new Color(light, light, light, pixel.A), 0.18f);
+            image.SetPixel(x, y, muted.Lerp(new Color(0.83f, 0.65f, 0.44f, pixel.A), 0.09f));
+        }
+        return ImageTexture.CreateFromImage(image);
+    }
+
     private void StartRound()
     {
         retry.Hide();
