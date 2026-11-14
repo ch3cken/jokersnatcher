@@ -84,7 +84,48 @@ public partial class GameScene : Node2D
         }
     }
 
-    private void Aim() { }
+    private Card Pick(List<Card> cards)
+    {
+        return cards.LastOrDefault(c => c != held && bounds.HasPoint((pointer - c.Position).Rotated(-c.Angle)));
+    }
+
+    public override void _Input(InputEvent input)
+    {
+        if (countdown > 0 || result != null || input is not InputEventMouseButton button ||
+            button.ButtonIndex != MouseButton.Left) return;
+        pointer = GetGlobalTransformWithCanvas().AffineInverse() * button.Position;
+        if (button.Pressed && held == null)
+        {
+            held = Pick(mine);
+            fromRival = false;
+            if (held != null) Aim();
+        }
+        else if (!button.Pressed && held != null)
+        {
+            Aim();
+            if (pointer.Y >= 355)
+            {
+                mine.Remove(held);
+                mine.Insert(gap, held);
+            }
+            held = match = null;
+        }
+        QueueRedraw();
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationFocusOut) held = match = null;
+    }
+
+    private void Aim()
+    {
+        int others = mine.Count(c => c != held);
+        gap = 0;
+        while (gap < others && pointer.X > Slot(gap, others, false).X) gap++;
+        held.Position = pointer;
+        held.Angle = 0;
+    }
     public override void _Draw()
     {
         DrawRect(new Rect2(0, 0, 960, 600), Ink);
