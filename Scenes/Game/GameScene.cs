@@ -122,7 +122,14 @@ public partial class GameScene : Node2D
             uv[i] = new(0, t);
             uv[opposite] = new(1, t);
         }
-        DrawPolygon(outline, new[] { Colors.White }, uv, ArmArt);
+        for (int i = 0; i < steps; i++)
+        {
+            int j = outline.Length - 1 - i;
+            DrawPrimitive(new[] { outline[i], outline[i+1], outline[j] },
+                new[] { Colors.White }, new[] { uv[i], uv[i+1], uv[j] }, ArmArt);
+            DrawPrimitive(new[] { outline[i+1], outline[j-1], outline[j] },
+                new[] { Colors.White }, new[] { uv[i+1], uv[j-1], uv[j] }, ArmArt);
+        }
     }
 
     private void DrawShoulder()
