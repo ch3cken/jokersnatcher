@@ -21,6 +21,7 @@ public partial class GameScene : Node2D
         public readonly int Rank = rank;
         public Vector2 Position;
         public float Angle;
+        public bool LeavingRivalHand;
     }
 
     private readonly List<Card> mine = new();
@@ -137,6 +138,7 @@ public partial class GameScene : Node2D
                 if (move == Move.Pair)
                 {
                     rival.Remove(destinationCard);
+                    targetCard.LeavingRivalHand = destinationCard.LeavingRivalHand = true;
                     FlyToCenter(targetCard);
                     FlyToCenter(destinationCard);
                     CheckResult();
@@ -452,14 +454,20 @@ public partial class GameScene : Node2D
 
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
-        float spacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
-        for (int i = 0; i < count; i++)
+        float half = Mathf.Max(1, (count - 1) * 0.5f);
+        float tableSpacing = Mathf.Min(19, 470f / Mathf.Max(1, count - 1));
+        float lensSpacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
+
+        // Project the animated table pose, including cards between slots.
+        void DrawLiveCard(Card card)
         {
-            Card card = rival[i];
-            float offset = i - (count - 1) * 0.5f;
-            float t = offset / Mathf.Max(1, (count - 1) * 0.5f);
-            Vector2 pos = lens + new Vector2(offset * spacing, -35 + 44 * t * t);
-            DrawSetTransform(pos, t * 0.19f, Vector2.One * 1.85f);
+            float x = Mathf.Clamp((card.Position.X - 505) / tableSpacing * lensSpacing, -320, 320);
+            float y = Mathf.Clamp(-35 + (card.Position.Y - 198) * (44f / 18), -65, 100);
+            float angle = Mathf.Clamp(card.Angle / (half * 0.072f), -1, 1) * 0.19f;
+            // Keep even the tilted outer corners of a moving card within the lens.
+            float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
+            x = Mathf.Clamp(x, -maxX, maxX);
+            DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
             if (card.Rank == 0)
             {
                 DrawRect(bounds.Grow(5), new Color("#ffda793d"));
@@ -477,6 +485,13 @@ public partial class GameScene : Node2D
             DrawString(ThemeDB.FallbackFont, new(-34, -40), card.Rank == 0 ? "J" : card.Rank.ToString(),
                 fontSize: 16, modulate: Ink);
         }
+        Card moving = reachTime >= 0 && move != Move.Steal ? targetCard : null;
+        foreach (Card card in rival)
+            if (card != moving) DrawLiveCard(card);
+        if (moving != null && rival.Contains(moving)) DrawLiveCard(moving);
+        foreach (Card card in discarding)
+            if (card.LeavingRivalHand) DrawLiveCard(card);
+        if (carried != null && paw.Y < 290) DrawLiveCard(carried);
         DrawSetTransform(lens + new Vector2(0, 104), Mathf.Pi, Vector2.One);
         if (RivalPawArt != null) DrawTextureRect(RivalPawArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
