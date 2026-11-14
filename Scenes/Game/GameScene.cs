@@ -43,7 +43,11 @@ public partial class GameScene : Node2D
     private readonly List<Card> discarding = new();
     private Card held, match, hoveredRival, hoveredMine;
     private bool fromRival, inspecting;
+    private int playerInspectUses;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
+    private static readonly Vector2 InspectBadgeCenter = new(844, 472);
+    private const float InspectBadgeRadius = 32f;
+    private const int InspectBadgeFontSize = 36;
     private Vector2 pressPoint;
     private bool dragged;
     private int gap;
@@ -180,6 +184,7 @@ public partial class GameScene : Node2D
                     targetCard.LeavingRivalHand = destinationCard.LeavingRivalHand = true;
                     FlyToCenter(targetCard);
                     FlyToCenter(destinationCard);
+                    ai.GainInspectUse();
                     CheckResult();
                 }
                 else rival.Insert(to, targetCard);
@@ -337,7 +342,8 @@ public partial class GameScene : Node2D
         rival.Clear();
         discarding.Clear();
         held = match = hoveredRival = targetCard = carried = destinationCard = null;
-        inspecting = dragged = fromRival = false;
+        inspecting = dragged = fromRival = transitioning = false;
+        playerInspectUses = 0;
         move = Move.Wait;
         reachTime = -1;
         restTime = 0;
@@ -487,8 +493,9 @@ public partial class GameScene : Node2D
         }
         if (countdown > 0 || result != null) return;
         Card grip = button.Pressed && held == null ? RivalGripAtPointer() : null;
-        if (button.Pressed && held == null && grip == null && GlassBounds.HasPoint(pointer))
+        if (button.Pressed && held == null && grip == null && playerInspectUses > 0 && GlassBounds.HasPoint(pointer))
         {
+            playerInspectUses--;
             inspecting = true;
             hoveredRival = null;
             QueueRedraw();
@@ -527,6 +534,7 @@ public partial class GameScene : Node2D
             {
                 Discard(match);
                 Discard(held);
+                playerInspectUses++;
             }
             else if (dragged && pointer.Y >= 355)
             {
@@ -624,6 +632,7 @@ public partial class GameScene : Node2D
         }
         Layer(TableArt);
         Layer(GlassArt);
+        DrawInspectUsesBadge();
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
@@ -651,6 +660,20 @@ public partial class GameScene : Node2D
         if (inspecting && result == null) DrawMagnifier();
         if (countdown > 0 || result != null)
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
+    }
+
+    private void DrawInspectUsesBadge()
+    {
+        DrawCircle(InspectBadgeCenter, InspectBadgeRadius, Colors.White, true, -1, true);
+        DrawString(
+            ThemeDB.FallbackFont,
+            new Vector2(InspectBadgeCenter.X - InspectBadgeRadius, InspectBadgeCenter.Y + InspectBadgeFontSize * 0.36f),
+            playerInspectUses.ToString(),
+            HorizontalAlignment.Center,
+            InspectBadgeRadius * 2,
+            InspectBadgeFontSize,
+            Colors.Black
+        );
     }
 
     private void DrawMagnifier()

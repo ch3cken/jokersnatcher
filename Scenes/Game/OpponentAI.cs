@@ -12,6 +12,10 @@ internal sealed class OpponentAI
     private int lastSeen = -1;
     private bool newlyAcquired;
     private int inspectCooldown;
+    private int inspectUses;
+
+    public int InspectUses => inspectUses;
+    public void GainInspectUse() => inspectUses++;
     public void RememberInspection(int jokerIndex) => lastSeen = jokerIndex;
 
     public static float Delay(OpponentDifficulty level) => level switch
@@ -68,8 +72,9 @@ internal sealed class OpponentAI
             return new(Move.Pair, pair.First().index, pair.Skip(1).First().index);
         if (playerCount == 0) return new(Move.Wait);
         float curiosity = level switch { OpponentDifficulty.Easy => 0.18f, OpponentDifficulty.Hard => 0.55f, _ => 0.35f };
-        if (joker < 0 && playerCount > 1 && inspectCooldown == 0 && rng.Randf() < curiosity)
+        if (inspectUses > 0 && joker < 0 && playerCount > 1 && inspectCooldown == 0 && rng.Randf() < curiosity)
         {
+            inspectUses--;
             inspectCooldown = 4;
             return new(Move.Inspect);
         }
