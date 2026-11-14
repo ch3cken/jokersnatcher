@@ -548,12 +548,18 @@ public partial class GameScene : Node2D
         Layer(PartyShadow);
         Layer(PartyArt);
         Layer(LampArt);
-        Layer(BodyArt);
-        Layer(FaceArt);
-        Layer(SleeveBase);
+        bool checking = move == Move.Inspect && reachTime >= 0 && RivalGlassArt != null;
+        if (checking)
+            Layer(RivalGlassArt);
+        else
+        {
+            Layer(BodyArt);
+            Layer(FaceArt);
+            Layer(SleeveBase);
+        }
         Layer(TableArt);
         Layer(GlassArt);
-        DrawReachingArm();
+        if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(517,314,117,104), false);
@@ -566,22 +572,10 @@ public partial class GameScene : Node2D
         if (held != null) Paint(held, fromRival);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
         if (carried != null) Paint(carried, false);
-        if (reachTime >= 0 && RivalPawArt != null)
+        if (!checking && reachTime >= 0 && RivalPawArt != null)
         {
             Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y);
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
-        }
-        if (reachTime >= 0 && move == Move.Inspect)
-        {
-            Vector2 lens = paw + new Vector2(18,-28);
-            if (RivalGlassArt != null)
-                DrawTextureRect(RivalGlassArt, new Rect2(lens - new Vector2(26,26), new Vector2(72,66)), false);
-            else
-            {
-                DrawLine(lens + new Vector2(-14,17), paw, Ink, 7, true);
-                DrawCircle(lens, 24, new Color("#80c6c95c"), true, -1, true);
-                DrawArc(lens, 24, 0, Mathf.Tau, 40, new Color("#396468"), 4, true);
-            }
         }
         var hand = held == null ? HandArt : ClosedHandArt;
         if (hand != null)
