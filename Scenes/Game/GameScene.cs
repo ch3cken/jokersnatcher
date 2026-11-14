@@ -602,34 +602,25 @@ public partial class GameScene : Node2D
 
     private Texture2D inspectionFrame;
     private static readonly Color OutsideLens = new("#171524");
-    // These are the lens centre and bounds in the 360x220 tabletop glass sprite.
-    private static readonly Rect2I GlassSprite = new(243, 168, 94, 51);
-    private static readonly Vector2 GlassCentre = new(29, 16);
-    private static readonly Vector2 LensPixelSize = new(18, 28);
+    private const int LensRadius = 70, LensRim = 4, LensPixel = 4;
+    private const float InspectionScale = 0.64f;
+    private static readonly Vector2 GlassCentre = Vector2.One * (LensRadius + LensRim);
 
     private Texture2D MakeInspectionFrame()
     {
-        var image = GlassArt.GetImage();
-        if (image.IsCompressed()) image.Decompress();
-        var frame = image.GetRegion(GlassSprite);
-        frame.Convert(Image.Format.Rgba8);
-        for (int y = 0; y < frame.GetHeight(); y++)
+        int extent = (LensRadius + LensRim) * 2 + 15;
+        var frame = Image.CreateEmpty(extent, extent, false, Image.Format.Rgba8);
+        Color teal = new("#1c6b78"), shadow = new("#0f4747");
+        for (int y = 0; y < extent; y++)
+        for (int x = 0; x < extent; x++)
         {
-            int left = frame.GetWidth(), right = -1;
-            for (int x = 0; x < frame.GetWidth(); x++)
-            {
-                Color c = frame.GetPixel(x, y);
-                if (c.A > 0.5f && c.R > c.B)
-                {
-                    left = Mathf.Min(left, x);
-                    right = x;
-                }
-            }
-            for (int x = 0; x < frame.GetWidth(); x++)
-            {
-                if (x >= left && x <= right) frame.SetPixel(x, y, Colors.Transparent);
-                else if (frame.GetPixel(x, y).A < 0.5f) frame.SetPixel(x, y, OutsideLens);
-            }
+            Vector2 d = new Vector2(x + 0.5f, y + 0.5f) - GlassCentre;
+            float r = d.Length();
+            bool handle = d.X > 0 && d.Y > 0 && Mathf.Abs(d.X - d.Y) < 6 && d.X + d.Y < 160;
+            Color color = r < LensRadius ? Colors.Transparent :
+                r < LensRadius + LensRim ? (d.Y < -r * 0.35f ? shadow : teal) :
+                handle ? teal : OutsideLens;
+            frame.SetPixel(x, y, color);
         }
         return ImageTexture.CreateFromImage(frame);
     }
@@ -660,9 +651,10 @@ public partial class GameScene : Node2D
             float y = Mathf.Clamp(-35 + (card.Position.Y - 287) * (44f / 31), -65, 100);
             float angle = Mathf.Clamp(card.Angle / (half * 0.102f), -1, 1) * 0.19f;
             // Keep even the tilted outer corners of a moving card within the lens.
-            float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
+            float radius = (LensRadius - 1) * LensPixel / InspectionScale;
+            float maxX = Mathf.Sqrt(radius * radius - Mathf.Pow(Mathf.Abs(y) + 135, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
-            DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
+            DrawSetTransform(lens + new Vector2(x, y) * InspectionScale, angle, Vector2.One * (1.85f * InspectionScale));
             if (card.Rank == 0)
             {
                 DrawRect(bounds.Grow(5), new Color("#ffcc7066"));
@@ -684,10 +676,10 @@ public partial class GameScene : Node2D
         foreach (Card card in discarding)
             if (card.LeavingRivalHand) DrawLiveCard(card);
         if (carried != null && paw.Y < 355) DrawLiveCard(carried);
-        DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
+        DrawSetTransform(lens + new Vector2(0, 104) * InspectionScale, 0, Vector2.One * InspectionScale);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-        Rect2 frame = new(lens - GlassCentre * LensPixelSize, (Vector2)GlassSprite.Size * LensPixelSize);
+        Rect2 frame = new(lens - GlassCentre * LensPixel, inspectionFrame.GetSize() * LensPixel);
         DrawTextureRect(inspectionFrame, frame, false);
         // Cover any room pixels beyond the sprite on wide or tall windows.
         if (screen.Position.X < frame.Position.X)
