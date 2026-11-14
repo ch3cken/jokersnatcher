@@ -230,6 +230,7 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
+        inspectionFrame = MakeInspectionFrame();
         TintFaces(Faces, new Color("#58504b"));
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
@@ -542,7 +543,7 @@ public partial class GameScene : Node2D
 
     private const float RivalScale = 1.35f, PlayerScale = 2.05f;
 
-    public override void _Draw()
+    private void DrawRoom()
     {
         Layer(BackgroundArt);
         Layer(PartyShadow);
@@ -552,6 +553,11 @@ public partial class GameScene : Node2D
         Layer(FaceArt);
         Layer(SleeveBase);
         Layer(TableArt);
+    }
+
+    public override void _Draw()
+    {
+        DrawRoom();
         Layer(GlassArt);
         DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
@@ -594,18 +600,53 @@ public partial class GameScene : Node2D
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
     }
 
+    private Texture2D inspectionFrame;
+    private static readonly Color OutsideLens = new("#171524");
+    // These are the lens centre and bounds in the 360x220 tabletop glass sprite.
+    private static readonly Rect2I GlassSprite = new(243, 168, 94, 51);
+    private static readonly Vector2 GlassCentre = new(29, 16);
+    private static readonly Vector2 LensPixelSize = new(18, 28);
+
+    private Texture2D MakeInspectionFrame()
+    {
+        var image = GlassArt.GetImage();
+        if (image.IsCompressed()) image.Decompress();
+        var frame = image.GetRegion(GlassSprite);
+        frame.Convert(Image.Format.Rgba8);
+        for (int y = 0; y < frame.GetHeight(); y++)
+        {
+            int left = frame.GetWidth(), right = -1;
+            for (int x = 0; x < frame.GetWidth(); x++)
+            {
+                Color c = frame.GetPixel(x, y);
+                if (c.A > 0.5f && c.R > c.B)
+                {
+                    left = Mathf.Min(left, x);
+                    right = x;
+                }
+            }
+            for (int x = 0; x < frame.GetWidth(); x++)
+            {
+                if (x >= left && x <= right) frame.SetPixel(x, y, Colors.Transparent);
+                else if (frame.GetPixel(x, y).A < 0.5f) frame.SetPixel(x, y, OutsideLens);
+            }
+        }
+        return ImageTexture.CreateFromImage(frame);
+    }
     private void DrawMagnifier()
     {
         Vector2 lens = new(480, 300);
         Rect2 viewport = GetViewportRect();
         Transform2D toLocal = GetGlobalTransformWithCanvas().AffineInverse();
         Vector2 corner = toLocal * viewport.Position;
-        DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color("#171524"));
-        DrawSetTransform(lens, 0, new Vector2(1.10f, 1));
-        DrawCircle(Vector2.Zero, 409, new Color("#b8b0c7"), true, -1, true);
-        DrawCircle(Vector2.Zero, 401, new Color("#45445f"), true, -1, true);
-        DrawArc(Vector2.Zero, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
-
+        Rect2 screen = new Rect2(corner, toLocal * viewport.End - corner).Grow(1);
+        DrawRect(screen, OutsideLens);
+        const float zoom = 1.85f;
+        DrawSetTransform(lens - new Vector2(566, 287) * zoom, 0, Vector2.One * zoom);
+        DrawRoom();
+        DrawReachingArm();
+        if (reachTime < 0 && PalmArt != null)
+            DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
@@ -646,6 +687,17 @@ public partial class GameScene : Node2D
         DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        Rect2 frame = new(lens - GlassCentre * LensPixelSize, (Vector2)GlassSprite.Size * LensPixelSize);
+        DrawTextureRect(inspectionFrame, frame, false);
+        // Cover any room pixels beyond the sprite on wide or tall windows.
+        if (screen.Position.X < frame.Position.X)
+            DrawRect(new Rect2(screen.Position, new Vector2(frame.Position.X - screen.Position.X, screen.Size.Y)), OutsideLens);
+        if (screen.End.X > frame.End.X)
+            DrawRect(new Rect2(frame.End.X, screen.Position.Y, screen.End.X - frame.End.X, screen.Size.Y), OutsideLens);
+        if (screen.Position.Y < frame.Position.Y)
+            DrawRect(new Rect2(screen.Position, new Vector2(screen.Size.X, frame.Position.Y - screen.Position.Y)), OutsideLens);
+        if (screen.End.Y > frame.End.Y)
+            DrawRect(new Rect2(screen.Position.X, frame.End.Y, screen.Size.X, screen.End.Y - frame.End.Y), OutsideLens);
     }
     private void Paint(Card card, bool hidden)
     {
