@@ -31,6 +31,65 @@ public partial class GameScene : Node2D
     private bool fromRival;
     private int gap;
     private Vector2 pointer;
+    [Export(PropertyHint.Range, "1,20,0.1")] public float StealInterval { get; set; } = 5;
+    private static readonly Vector2 ArmRest = new(625, 146), ArmRaised = new(645, -65);
+    private Vector2 paw = ArmRest, reachEnd;
+    private Card targetCard, carried;
+    private float reachTime = -1, restTime;
+
+    private void UpdateArm(float dt)
+    {
+        if (countdown > 0 || result != null) return;
+        if (reachTime < 0)
+        {
+            restTime += dt;
+            if (restTime < StealInterval || mine.Count == 0) return;
+            var available = mine.Where(c => c != held && c != match).ToArray();
+            if (available.Length == 0) return;
+            targetCard = available[rng.RandiRange(0, available.Length - 1)];
+            reachEnd = targetCard.Position;
+            reachTime = restTime = 0;
+        }
+        reachTime += dt;
+        if (reachTime < 0.42f)
+            paw = ArmRest.Lerp(ArmRaised, Mathf.SmoothStep(0, 1, reachTime / 0.42f));
+        else if (reachTime < 1.04f)
+        {
+            if (mine.Contains(targetCard)) reachEnd = targetCard.Position;
+            paw = ArmRaised.Lerp(reachEnd, Mathf.SmoothStep(0, 1, (reachTime - 0.42f) / 0.62f));
+        }
+        else
+        {
+            if (targetCard != null)
+            {
+                if (targetCard != held && targetCard != match && mine.Remove(targetCard))
+                    carried = targetCard;
+                targetCard = null;
+            }
+            Vector2 home = Slot(rival.Count, rival.Count + 1, true);
+            paw = reachTime < 1.8f
+                ? reachEnd.Lerp(home, Mathf.SmoothStep(0, 1, (reachTime - 1.15f) / 0.65f))
+                : home.Lerp(ArmRest, Mathf.SmoothStep(0, 1, (reachTime - 1.8f) / 0.32f));
+            if (carried != null)
+            {
+                carried.Position = paw;
+                if (reachTime >= 1.8f)
+                {
+                    rival.Add(carried);
+                    carried = null;
+                    CheckResult();
+                }
+            }
+            if (reachTime >= 2.12f) reachTime = -1;
+        }
+    }
+
+    private void CheckResult()
+    {
+        if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
+        if (rival.Count == 1 && rival[0].Rank == 0 && carried == null) result = "LOSE";
+    }
+
     private float countdown = 3;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
@@ -58,6 +117,7 @@ public partial class GameScene : Node2D
         pointer = GetLocalMousePosition();
         countdown = Mathf.Max(0, countdown - (float)delta);
         if (held != null) Aim();
+        UpdateArm((float)delta);
         Layout(1 - Mathf.Exp(-18 * (float)delta));
         QueueRedraw();
     }
@@ -146,8 +206,7 @@ public partial class GameScene : Node2D
                 mine.Insert(gap, held);
             }
             held = match = null;
-            if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
-            if (rival.Count == 1 && rival[0].Rank == 0) result = "LOSE";
+            CheckResult();
         }
         QueueRedraw();
     }
@@ -187,6 +246,11 @@ public partial class GameScene : Node2D
         foreach (var card in mine) if (card != held) Paint(card, false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
+        if (carried != null) Paint(carried, true);
+        if (ArmArt != null && paw.Y > -30)
+            DrawTextureRect(ArmArt,new Rect2(paw.X - 23,-30,46,paw.Y + 30),false);
+        if (RivalPawArt != null)
+            DrawTextureRect(RivalPawArt,new Rect2(paw - new Vector2(39,19),new Vector2(78,65)),false);
         if (HandArt != null)
         {
             Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(738,341);
