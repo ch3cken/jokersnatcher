@@ -78,7 +78,7 @@ public partial class GameScene : Node2D
             {
                 targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
                 destinationCard = choice.To < 0 ? null : rival[choice.To];
-                reachEnd = targetCard.Position;
+                reachEnd = targetCard.Position + GripOffset(targetCard.Angle, move == Move.Steal ? PlayerScale : RivalScale);
             }
             reachTime = restTime = 0;
         }
@@ -97,7 +97,8 @@ public partial class GameScene : Node2D
             UpdateOwnMove();
             return;
         }
-        if (targetCard != null && mine.Contains(targetCard)) reachEnd = targetCard.Position;
+        if (targetCard != null && mine.Contains(targetCard))
+            reachEnd = targetCard.Position + GripOffset(targetCard.Angle, PlayerScale);
         if (reachTime < CatchTime)
             paw = ArmRest.Lerp(reachEnd, Phase(reachTime, 0, CatchTime));
         else
@@ -110,6 +111,7 @@ public partial class GameScene : Node2D
                     ai.ObserveRemoval(taken);
                     if (targetCard.Rank == 0) ai.AcquiredJoker();
                     carried = targetCard;
+                    pickupAngle = carried.Angle;
                     if (held == carried) held = match = null;
                     else if (match == carried) match = null;
                 }
@@ -121,7 +123,10 @@ public partial class GameScene : Node2D
             {
                 // The player can draw from this hand while the paw is returning.
                 insertionSlot = Mathf.Min(insertionSlot, rival.Count);
-                deposit = Slot(RivalGapIndex, rival.Count + 1 - (rival.Contains(held) ? 1 : 0), true);
+                int count = rival.Count + 1 - (rival.Contains(held) ? 1 : 0);
+                float slotAngle = (RivalGapIndex - (count - 1) / 2f) * 0.102f;
+                carried.Angle = Mathf.Lerp(pickupAngle, slotAngle, Phase(reachTime, ReturnStart, DepositTime));
+                deposit = Slot(RivalGapIndex, count, true) + GripOffset(slotAngle, RivalScale);
             }
             if (reachTime < DepositTime)
                 paw = reachEnd.Lerp(deposit, Phase(reachTime, ReturnStart, DepositTime));
@@ -130,7 +135,7 @@ public partial class GameScene : Node2D
 
             if (carried != null)
             {
-                carried.Position = paw + new Vector2(0, 26 * (1 - Phase(reachTime, ReturnStart, DepositTime)));
+                carried.Position = paw - GripOffset(carried.Angle, CarriedScale);
                 if (reachTime >= DepositTime)
                 {
                     rival.Insert(insertionSlot, carried);
@@ -148,16 +153,18 @@ public partial class GameScene : Node2D
         const float contact = 0.32f, place = 0.67f, finish = 0.91f;
         if (reachTime < contact)
         {
-            if (targetCard != held && rival.Contains(targetCard)) reachEnd = targetCard.Position;
+            if (targetCard != held && rival.Contains(targetCard))
+                reachEnd = targetCard.Position + GripOffset(targetCard.Angle, RivalScale);
             paw = ArmRest.Lerp(reachEnd, Phase(reachTime, 0, contact));
             return;
         }
         if (targetCard != null && reachTime < place)
         {
-            deposit = destinationCard != held && rival.Contains(destinationCard) ? destinationCard.Position : reachEnd;
+            deposit = destinationCard != held && rival.Contains(destinationCard)
+                ? destinationCard.Position + GripOffset(targetCard.Angle, RivalScale) : reachEnd;
             paw = reachEnd.Lerp(deposit, Phase(reachTime, contact, place));
             if (result == null && rival.Contains(targetCard) && held != targetCard)
-                targetCard.Position = paw;
+                targetCard.Position = paw - GripOffset(targetCard.Angle, RivalScale);
             return;
         }
         if (targetCard != null)
@@ -184,6 +191,10 @@ public partial class GameScene : Node2D
     }
 
     private static float ForegroundScale(float y) => 1 + 0.65f * Phase(y, 205, 505);
+    private float pickupAngle;
+    private float CarriedScale => Mathf.Lerp(PlayerScale, RivalScale, Phase(reachTime, ReturnStart, DepositTime));
+    private Vector2 GripOffset(float angle, float scale) =>
+        new Vector2(0, bounds.Position.Y * scale).Rotated(angle);
 
     private void Layer(Texture2D texture)
     {
@@ -395,6 +406,11 @@ public partial class GameScene : Node2D
             {
                 if (card == held) continue;
                 if (opening && i == openAt) i++;
+                if (upper && card == targetCard && move is (Move.Pair or Move.Shuffle) && reachTime >= 0.32f)
+                {
+                    i++;
+                    continue;
+                }
                 Vector2 destination = Slot(i, slots, upper);
                 if (receiving)
                     destination.X += i < openAt ? -16 : 16;
@@ -504,26 +520,33 @@ public partial class GameScene : Node2D
     private Card NearbyMatch()
     {
         // Probe visible card faces so a buried card cannot snap through its neighbour.
-        Card closest = null;
-        float best = float.PositiveInfinity;
+        if (!mine.Exists(c => c != held && c.Rank == held.Rank)) return null;
         foreach (var offset in SnapOffsets)
         {
             var probe = pointer + offset;
-            var top = mine.LastOrDefault(c => c != held &&
-                bounds.HasPoint((probe - c.Position).Rotated(-c.Angle) / PlayerScale));
-            if (top?.Rank != held.Rank || offset.LengthSquared() >= best) continue;
-            best = offset.LengthSquared();
-            closest = top;
-            if (best == 0) break;
+            for (int i = mine.Count - 1; i >= 0; i--)
+            {
+                var card = mine[i];
+                if (card == held || !bounds.HasPoint((probe - card.Position).Rotated(-card.Angle) / PlayerScale)) continue;
+                if (card.Rank == held.Rank) return card;
+                break;
+            }
         }
-        return closest;
+        return null;
     }
 
-    private static readonly Vector2[] SnapOffsets = {
-        Vector2.Zero, new(-7,0), new(7,0), new(0,-7), new(0,7),
-        new(-10,-10), new(10,-10), new(-10,10), new(10,10),
-        new(-15,0), new(15,0), new(0,-15), new(0,15)
-    };
+    private static readonly Vector2[] SnapOffsets = BuildSnapOffsets();
+
+    private static Vector2[] BuildSnapOffsets()
+    {
+        var offsets = new List<Vector2> { Vector2.Zero };
+        for (int radius = 5; radius <= 25; radius += 5)
+        {
+            for (int direction = 0; direction < 16; direction++)
+                offsets.Add(Vector2.FromAngle(Mathf.Tau * direction / 16) * radius);
+        }
+        return offsets.ToArray();
+    }
 
     private void Discard(Card card)
     {
@@ -636,14 +659,15 @@ public partial class GameScene : Node2D
         if (moving != null && rival.Contains(moving)) DrawLiveCard(moving);
         foreach (Card card in discarding)
             if (card.LeavingRivalHand) DrawLiveCard(card);
-        if (carried != null && paw.Y < 355) DrawLiveCard(carried);
+        if (carried != null && carried.Position.Y < 355) DrawLiveCard(carried);
         DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
     private void Paint(Card card, bool hidden)
     {
-        DrawSetTransform(card.Position,card.Angle,Vector2.One * (hidden ? RivalScale : PlayerScale));
+        float scale = card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
+        DrawSetTransform(card.Position,card.Angle,Vector2.One * scale);
 
         Texture2D tex = hidden ? Back : Face(card);
         if (tex != null)
