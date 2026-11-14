@@ -211,11 +211,50 @@ public partial class GameScene : Node2D
             previous = point;
         }
     }
+    private bool transitioning;
+
     private void CheckResult()
     {
         if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
         if (rival.Count == 1 && rival[0].Rank == 0 && carried == null) result = "LOSE";
-        retry.Visible = result != null;
+        if (result != null && !transitioning)
+        {
+            transitioning = true;
+            TransitionToResults(result == "WIN");
+        }
+    }
+
+    private void TransitionToResults(bool playerWon)
+    {
+        var fadeLayer = new CanvasLayer { Layer = 100 };
+        var fadeRect = new ColorRect
+        {
+            Color = new Color(0, 0, 0, 0),
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        fadeRect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        fadeLayer.AddChild(fadeRect);
+        AddChild(fadeLayer);
+
+        Tween tween = CreateTween();
+        tween.TweenInterval(0.6);
+        tween.TweenProperty(fadeRect, "color:a", 1.0f, 0.6)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+        tween.TweenCallback(Callable.From(() => LoadResultsScreen(playerWon)));
+    }
+
+    private void LoadResultsScreen(bool playerWon)
+    {
+        PackedScene resultsPacked = GD.Load<PackedScene>("res://Scenes/Results/results_screen.tscn");
+        ResultsScreen resultsScreen = resultsPacked.Instantiate<ResultsScreen>();
+        resultsScreen.PlayerWon = playerWon;
+
+        SceneTree tree = GetTree();
+        Node currentScene = tree.CurrentScene;
+        tree.Root.AddChild(resultsScreen);
+        tree.CurrentScene = resultsScreen;
+        currentScene?.QueueFree();
     }
 
     private readonly Button retry = new()
