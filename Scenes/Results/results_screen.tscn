@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://bresults0001"]
+
+[ext_resource type="Script" uid="uid://d3dyoe87rb1no" path="res://Scenes/Results/ResultsScreen.cs" id="1_tva50"]
+[ext_resource type="Texture2D" uid="uid://deiyfl2ufmgjq" path="res://icon.svg" id="2_i4gu4"]
+
+[node name="ResultsScreen" type="Control" unique_id=2007865140]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tva50")
+
+[node name="Background" type="ColorRect" parent="." unique_id=725316168]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="MainLayout" type="MarginContainer" parent="." unique_id=1466996311]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 36
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainLayout" unique_id=362400589]
+layout_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="MainLayout/VBoxContainer" unique_id=1147027974]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CenterGroup" type="VBoxContainer" parent="MainLayout/VBoxContainer/CenterContainer" unique_id=1141054906]
+layout_mode = 2
+theme_override_constants/separation = 36
+alignment = 1
+
+[node name="CenterImage" type="TextureRect" parent="MainLayout/VBoxContainer/CenterContainer/CenterGroup" unique_id=1016745138]
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 2
+texture = ExtResource("2_i4gu4")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionLabel" type="Label" parent="MainLayout/VBoxContainer/CenterContainer/CenterGroup" unique_id=338802180]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "There's something you should see..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueLabel" type="Label" parent="MainLayout/VBoxContainer" unique_id=1867892010]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 22
+text = "Press anywhere to continue"
+horizontal_alignment = 1
+vertical_alignment = 1
