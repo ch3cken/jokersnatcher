@@ -27,8 +27,6 @@ public partial class GameScene : Node2D
     [Export] public Texture2D ThumbArt { get; set; }
     [Export] public Texture2D[] SecondFaces { get; set; } = new Texture2D[11];
     [Export] public Texture2D RivalPawArt { get; set; }
-    [Export] public AudioStream[] TakeCardSounds { get; set; } = new AudioStream[2];
-    private readonly AudioStreamPlayer cardSoundPlayer = new() { MaxPolyphony = 4 };
 
     private sealed class Card(int rank, bool second = false)
     {
@@ -128,7 +126,7 @@ public partial class GameScene : Node2D
                     if (targetCard.Rank == 0) ai.AcquiredJoker();
                     carried = targetCard;
                     pickupAngle = carried.Angle;
-                    PlayTakeCardSound();
+                    SoundEffectManager.Instance?.PlayTakeCard();
                     if (held == carried) held = null;
                     if (held == null || carried == pendingPair) pendingPair = null;
                 }
@@ -316,15 +314,6 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
-        if (TakeCardSounds == null || TakeCardSounds.Length == 0 || TakeCardSounds.All(s => s == null))
-        {
-            TakeCardSounds = new[]
-            {
-                GD.Load<AudioStream>("res://cards/takecard1.mp3"),
-                // GD.Load<AudioStream>("res://cards/takecard2.mp3")
-            };
-        }
-        AddChild(cardSoundPlayer);
         TintFaces(Faces, new Color("#58504b"));
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
@@ -667,15 +656,6 @@ public partial class GameScene : Node2D
             inspecting = false;
             held = pendingPair = null;
         }
-    }
-
-    private void PlayTakeCardSound()
-    {
-        if (TakeCardSounds == null || TakeCardSounds.Length == 0) return;
-        var validSounds = TakeCardSounds.Where(s => s != null).ToArray();
-        if (validSounds.Length == 0) return;
-        cardSoundPlayer.Stream = validSounds[rng.RandiRange(0, validSounds.Length - 1)];
-        cardSoundPlayer.Play();
     }
 
     private Card pendingPair;

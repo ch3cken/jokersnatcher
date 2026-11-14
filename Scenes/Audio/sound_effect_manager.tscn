@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://bsfxmanager01"]
+
+[ext_resource type="Script" path="res://Scenes/Audio/SoundEffectManager.cs" id="1_script"]
+[ext_resource type="AudioStream" path="res://cards/takecard1.mp3" id="2_takecard1"]
+[ext_resource type="AudioStream" path="res://cards/takecard2.mp3" id="3_takecard2"]
+
+[node name="SoundEffectManager" type="Node"]
+script = ExtResource("1_script")
+SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2")])
