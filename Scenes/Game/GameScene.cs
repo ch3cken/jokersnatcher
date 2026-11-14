@@ -45,6 +45,9 @@ public partial class GameScene : Node2D
     private bool fromRival, inspecting;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
     private Vector2 pressPoint;
+    private Vector2 grabLocal, previousDragPointer;
+    private Vector2? lastDropPointer;
+    private float grabAngle;
     private bool dragged;
     private int gap;
     private Vector2 pointer;
@@ -57,6 +60,8 @@ public partial class GameScene : Node2D
         DepositTime = 1.17f, RestTime = 1.42f;
     private Vector2 paw = ArmRest, reachEnd, deposit;
     private Card targetCard, carried;
+    private Card landedCard;
+    private float landingGlow;
     private int insertionSlot;
     private float reachTime = -1, restTime;
 
@@ -71,6 +76,7 @@ public partial class GameScene : Node2D
             restTime += dt;
             if (restTime < OpponentAI.Delay(Difficulty)) return;
             var choice = ai.Choose(Difficulty, rival.Select(c => c.Rank).ToArray(), mine.Count, rival.IndexOf(held));
+            landedCard = null;
             restTime = 0;
             move = choice.Move;
             if (move == Move.Wait) return;
@@ -124,7 +130,7 @@ public partial class GameScene : Node2D
                 // The player can draw from this hand while the paw is returning.
                 insertionSlot = Mathf.Min(insertionSlot, rival.Count);
                 int count = rival.Count + 1 - (rival.Contains(held) ? 1 : 0);
-                float slotAngle = (RivalGapIndex - (count - 1) / 2f) * 0.102f;
+                float slotAngle = SlotAngle(RivalGapIndex, count, true);
                 carried.Angle = Mathf.Lerp(pickupAngle, slotAngle, Phase(reachTime, ReturnStart, DepositTime));
                 deposit = Slot(RivalGapIndex, count, true) + GripOffset(slotAngle, RivalScale);
             }
@@ -139,6 +145,8 @@ public partial class GameScene : Node2D
                 if (reachTime >= DepositTime)
                 {
                     rival.Insert(insertionSlot, carried);
+                    landedCard = carried;
+                    landingGlow = 1;
                     carried = null;
                     CheckResult();
                 }
@@ -161,7 +169,7 @@ public partial class GameScene : Node2D
         if (targetCard != null && reachTime < place)
         {
             deposit = destinationCard != held && rival.Contains(destinationCard)
-                ? destinationCard.Position + GripOffset(targetCard.Angle, RivalScale) : reachEnd;
+                ? RivalMoveDestination() + GripOffset(targetCard.Angle, RivalScale) : reachEnd;
             paw = reachEnd.Lerp(deposit, Phase(reachTime, contact, place));
             if (result == null && rival.Contains(targetCard) && held != targetCard)
                 targetCard.Position = paw - GripOffset(targetCard.Angle, RivalScale);
@@ -182,7 +190,12 @@ public partial class GameScene : Node2D
                     FlyToCenter(destinationCard);
                     CheckResult();
                 }
-                else rival.Insert(to, targetCard);
+                else
+                {
+                    rival.Insert(to, targetCard);
+                    landedCard = targetCard;
+                    landingGlow = 1;
+                }
             }
             targetCard = destinationCard = null;
         }
@@ -230,6 +243,7 @@ public partial class GameScene : Node2D
         if (rival.Count == 1 && rival[0].Rank == 0 && carried == null) result = "LOSE";
         if (result != null && !transitioning)
         {
+            Input.MouseMode = Input.MouseModeEnum.Visible;
             transitioning = true;
             TransitionToResults(result == "WIN");
         }
@@ -329,6 +343,7 @@ public partial class GameScene : Node2D
 
     private void StartRound()
     {
+        Input.MouseMode = Input.MouseModeEnum.Hidden;
         retry.Hide();
         mine.Clear();
         rival.Clear();
@@ -368,25 +383,69 @@ public partial class GameScene : Node2D
         Position = (view - new Vector2(960, 600) * scale) / 2;
     }
 
+    public override void _ExitTree()
+    {
+        Input.MouseMode = Input.MouseModeEnum.Visible;
+    }
+
     public override void _Process(double delta)
     {
         Fit();
         pointer = GetLocalMousePosition();
+        landingGlow = Mathf.MoveToward(landingGlow, 0, (float)delta / 0.45f);
         countdown = Mathf.Max(0, countdown - (float)delta);
-        if (held != null) Aim();
+        if (held != null)
+        {
+            Aim();
+            float dt = Mathf.Max((float)delta, 0.001f);
+            float speedX = (pointer.X - previousDragPointer.X) / dt;
+            float tilt = Mathf.Clamp(speedX * 0.00016f, -0.14f, 0.14f);
+            float weight = 1 - Mathf.Exp(-32 * dt);
+            float dragAngle = !fromRival && dragged && pointer.Y >= 355
+                ? SlotAngle(gap, mine.Count, false) : grabAngle + tilt;
+            held.Angle = Mathf.LerpAngle(held.Angle, match?.Angle ?? dragAngle, weight);
+            Vector2 destination = match == null ? pointer - grabLocal.Rotated(held.Angle)
+                : match.Position + new Vector2(5, -5);
+            held.Position = fromRival ? held.Position.Lerp(destination, weight) : destination;
+            previousDragPointer = pointer;
+        }
         UpdateArm((float)delta);
-        hoveredMine = !inspecting && held == null && countdown <= 0 && result == null ? Pick(mine) : null;
-        hoveredRival = hoveredMine == null && !inspecting && held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
+        bool canHover = !inspecting && held == null && countdown <= 0 && result == null;
+        Card grip = canHover ? RivalGripAtPointer() : null;
+        if (lastDropPointer.HasValue && pointer.DistanceSquaredTo(lastDropPointer.Value) > 9)
+            lastDropPointer = null;
+        hoveredMine = canHover && !lastDropPointer.HasValue && grip == null && !GlassBounds.HasPoint(pointer) ? Pick(mine) : null;
+        hoveredRival = grip ?? (canHover && hoveredMine == null && !GlassBounds.HasPoint(pointer) ? Pick(rival) : null);
         Layout(1 - Mathf.Exp(-18 * (float)delta));
         QueueRedraw();
     }
 
-    private static Vector2 Slot(int i, int total, bool upper)
+    private const float PlayerFanRadius = 298, RivalFanRadius = 251;
+    private const float RivalFanCenterX = 612;
+
+    private static float FanStep(int total, bool upper) =>
+        Mathf.Min(upper ? 0.116f : 0.124f, 1.37f / Mathf.Max(1, total - 1));
+
+    private static float SlotAngle(int i, int total, bool upper) =>
+        (i - (total - 1) * 0.5f) * FanStep(total, upper);
+
+    private static Vector2 Slot(int i, int total, bool upper) =>
+        FanPosition(SlotAngle(i, total, upper), total, upper);
+
+    private static Vector2 FanPosition(float angle, int total, bool upper)
     {
-        float t = i - (total - 1) / 2f;
-        float arc = Mathf.Pow(t / Mathf.Max(1, (total - 1) / 2f), 2);
-        return new((upper ? 566 : 206) + t * Mathf.Min(upper ? 21 : 28, 470f / Mathf.Max(1, total - 1)),
-                   upper ? 287 + arc * 31 : 386 + arc * 49);
+        float radius = upper ? RivalFanRadius : PlayerFanRadius;
+        float centerX = RivalFanCenterX;
+        if (!upper)
+        {
+            // Leave room for the tilted outer card and its top-left rank.
+            float outer = Mathf.Abs(SlotAngle(0, total, false));
+            float leftExtent = (radius + 60 * PlayerScale) * Mathf.Sin(outer)
+                + 38 * PlayerScale * Mathf.Cos(outer);
+            centerX = Mathf.Max(206, leftExtent + 8);
+        }
+        return new(centerX + radius * Mathf.Sin(angle),
+            (upper ? 287 : 386) + radius * (1 - Mathf.Cos(angle)));
     }
 
     // The dragged rival card still belongs to the list but occupies no visible slot.
@@ -407,18 +466,7 @@ public partial class GameScene : Node2D
         return bounds.HasPoint(local) ? targetCard : null;
     }
 
-    private Card RivalAtPointer()
-    {
-        if (carried != null) return Pick(rival);
-        // Resting positions keep the cursor on the same card while its neighbours slide.
-        for (int i = rival.Count - 1; i >= 0; i--)
-        {
-            float angle = (i - (rival.Count - 1) / 2f) * 0.102f;
-            Vector2 local = (pointer - Slot(i, rival.Count, true)).Rotated(-angle);
-            if (bounds.HasPoint(local / RivalScale)) return rival[i];
-        }
-        return null;
-    }
+    private const float HoverLift = 14;
 
     private void Layout(float weight)
     {
@@ -427,40 +475,54 @@ public partial class GameScene : Node2D
             var cards = upper ? rival : mine;
             int count = cards.Count(c => c != held);
             bool receiving = upper && carried != null;
-            bool opening = receiving || (!upper && held != null && !fromRival && match == null);
-            int openAt = receiving ? RivalGapIndex : gap;
-            int slots = count + (opening ? 1 : 0);
-            int focus = upper && hoveredRival != null ? rival.IndexOf(hoveredRival) : -1;
-            if (!upper && held == null)
+            bool shuffling = upper && move == Move.Shuffle && reachTime >= 0.32f &&
+                targetCard != null && targetCard != held && destinationCard != held && rival.Contains(destinationCard);
+            bool opening = receiving || shuffling || (!upper && held != null && !fromRival && match == null);
+            int openAt = receiving ? RivalGapIndex : shuffling ? RivalShuffleIndex() : gap;
+            int slots = count + (opening && !shuffling ? 1 : 0);
+            int landing = receiving || shuffling ? openAt : -1;
+            if (upper && landing < 0 && landingGlow > 0 && landedCard != null && landedCard != held)
             {
-                // Use resting positions so the opening gap cannot move its own trigger.
-                for (int n = 0; n < count; n++)
-                {
-                    Vector2 local = pointer - Slot(n, count, false);
-                    if (bounds.Grow(5).HasPoint(local / PlayerScale)) focus = n;
-                }
+                landing = rival.IndexOf(landedCard);
+                int hidden = rival.IndexOf(held);
+                if (hidden >= 0 && hidden < landing) landing--;
             }
+            int focus = held == null ? cards.IndexOf(upper ? hoveredRival : hoveredMine) : -1;
             int i = 0;
             foreach (Card card in cards)
             {
                 if (card == held) continue;
+                if (shuffling && card == targetCard) continue;
                 if (opening && i == openAt) i++;
                 if (upper && card == targetCard && move is (Move.Pair or Move.Shuffle) && reachTime >= 0.32f)
                 {
                     i++;
                     continue;
                 }
-                Vector2 destination = Slot(i, slots, upper);
-                if (receiving)
-                    destination.X += i < openAt ? -16 : 16;
-                if (focus >= 0 && !receiving)
+                float angle = SlotAngle(i, slots, upper);
+                if (!upper && opening && dragged && pointer.Y >= 355)
+                {
+                    int distance = i - openAt;
+                    float spread = Mathf.Max(0, 36 - 9 * Mathf.Abs(distance));
+                    angle += Mathf.Sign(distance) * spread / PlayerFanRadius;
+                }
+                else if (landing >= 0)
+                {
+                    int distance = i - landing;
+                    float strength = receiving || shuffling ? 1 : landingGlow;
+                    float spread = Mathf.Max(0, 43 - 10 * Mathf.Abs(distance)) * strength;
+                    angle += Mathf.Sign(distance) * spread / RivalFanRadius;
+                }
+                else if (focus >= 0)
                 {
                     int distance = i - focus;
-                    destination.X += Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
-                    if (!upper && distance == 0) destination.Y -= 8;
+                    float arcLength = Mathf.Sign(distance) * Mathf.Max(0, 31 - 7 * Mathf.Abs(distance));
+                    angle += arcLength / (upper ? RivalFanRadius : PlayerFanRadius);
                 }
-                card.Position = card.Position.Lerp(destination, weight);
-                card.Angle = Mathf.Lerp(card.Angle, (i - (slots - 1) / 2f) * (upper ? 0.102f : 0.115f), weight);
+                Vector2 offset = card.Position - FanPosition(card.Angle, slots, upper);
+                Vector2 targetOffset = i == focus ? Vector2.Up * HoverLift : Vector2.Zero;
+                card.Angle = Mathf.LerpAngle(card.Angle, angle, weight);
+                card.Position = FanPosition(card.Angle, slots, upper) + offset.Lerp(targetOffset, weight);
                 i++;
             }
         }
@@ -468,7 +530,20 @@ public partial class GameScene : Node2D
 
     private Card Pick(List<Card> cards)
     {
-        return cards.LastOrDefault(c => c != held && bounds.HasPoint((pointer - c.Position).Rotated(-c.Angle) / (cards == rival ? RivalScale : PlayerScale)));
+        bool upper = cards == rival;
+        float scale = upper ? RivalScale : PlayerScale;
+        Card previous = upper ? hoveredRival : hoveredMine;
+        for (int i = cards.Count - 1; i >= 0; i--)
+        {
+            Card card = cards[i];
+            if (card == held) continue;
+            Vector2 offset = pointer - card.Position;
+            if (bounds.HasPoint(offset.Rotated(-card.Angle) / scale)) return card;
+            // Keep the original hit area while the hovered card lifts off the pointer.
+            if (card == previous && bounds.HasPoint((offset - Vector2.Down * HoverLift).Rotated(-card.Angle) / scale))
+                return card;
+        }
+        return null;
     }
 
     public override void _Input(InputEvent input)
@@ -494,10 +569,11 @@ public partial class GameScene : Node2D
         if (button.Pressed && held == null)
         {
             pressPoint = pointer;
+            lastDropPointer = null;
             dragged = false;
             held = grip ?? Pick(mine);
             fromRival = grip != null || held == null;
-            if (held == null) held = RivalAtPointer();
+            if (held == null) held = Pick(rival);
             if (grip != null)
             {
                 targetCard = destinationCard = null;
@@ -505,7 +581,13 @@ public partial class GameScene : Node2D
                 reachTime = 0.67f;
             }
             hoveredRival = null;
-            if (held != null) Aim();
+            if (held != null)
+            {
+                grabAngle = held.Angle;
+                grabLocal = (pointer - held.Position).Rotated(-grabAngle);
+                previousDragPointer = pointer;
+                Aim();
+            }
         }
         else if (!button.Pressed && held != null)
         {
@@ -530,6 +612,9 @@ public partial class GameScene : Node2D
                 ai.ObserveReorder(mine.IndexOf(held), gap, Difficulty);
                 mine.Remove(held);
                 mine.Insert(gap, held);
+                held.Angle = SlotAngle(gap, mine.Count, false);
+                held.Position = Slot(gap, mine.Count, false);
+                lastDropPointer = pointer;
             }
             held = match = null;
             CheckResult();
@@ -548,13 +633,22 @@ public partial class GameScene : Node2D
 
     private void Aim()
     {
-        int others = mine.Count(c => c != held);
-        gap = 0;
-        while (gap < others && pointer.X > Slot(gap, others, false).X) gap++;
+        if (!fromRival)
+        {
+            // Use the same fan and grab point for the preview and the final placement.
+            gap = 0;
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < mine.Count; i++)
+            {
+                float gripX = Slot(i, mine.Count, false).X + grabLocal.Rotated(SlotAngle(i, mine.Count, false)).X;
+                float distance = Mathf.Abs(pointer.X - gripX);
+                if (distance >= nearest) continue;
+                nearest = distance;
+                gap = i;
+            }
+        }
         dragged |= pointer.DistanceSquaredTo(pressPoint) >= 36;
         match = dragged && !fromRival && held.Rank > 0 ? NearbyMatch() : null;
-        held.Position = match == null ? pointer : match.Position + new Vector2(5,-5);
-        held.Angle = 0;
     }
     private Card NearbyMatch()
     {
@@ -579,7 +673,7 @@ public partial class GameScene : Node2D
     private static Vector2[] BuildSnapOffsets()
     {
         var offsets = new List<Vector2> { Vector2.Zero };
-        for (int radius = 5; radius <= 25; radius += 5)
+        for (int radius = 5; radius <= 35; radius += 5)
         {
             for (int direction = 0; direction < 16; direction++)
                 offsets.Add(Vector2.FromAngle(Mathf.Tau * direction / 16) * radius);
@@ -604,6 +698,21 @@ public partial class GameScene : Node2D
 
     private const float RivalScale = 1.35f, PlayerScale = 2.05f;
 
+    private Vector2 RivalMoveDestination()
+    {
+        if (move == Move.Pair) return destinationCard.Position;
+        return Slot(RivalShuffleIndex(), rival.Count - (rival.Contains(held) ? 1 : 0), true);
+    }
+
+    private int RivalShuffleIndex()
+    {
+        int index = rival.IndexOf(destinationCard);
+        int hidden = rival.IndexOf(held);
+        if (hidden < 0) return index;
+        if (rival.IndexOf(targetCard) < hidden) hidden--;
+        return hidden < index ? index - 1 : index;
+    }
+
     public override void _Draw()
     {
         Layer(BackgroundArt);
@@ -624,7 +733,7 @@ public partial class GameScene : Node2D
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         foreach (var card in rival) if (card != held && card != lifted) Paint(card, true);
-        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(517,314,117,104), false);
+        if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(533,314,117,104), false);
         if (reachTime < 0 && PalmArt != null)
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
@@ -640,7 +749,7 @@ public partial class GameScene : Node2D
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
         var hand = held == null ? HandArt : ClosedHandArt;
-        if (hand != null)
+        if (hand != null && result == null)
         {
             Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(395,410);
             DrawTextureRect(hand,new Rect2(tip - new Vector2(28,25),new Vector2(277,217)),false);
@@ -665,15 +774,16 @@ public partial class GameScene : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
-        float tableSpacing = Mathf.Min(21, 470f / Mathf.Max(1, count - 1));
+        float step = FanStep(count, true);
         float lensSpacing = Mathf.Min(91, 640f / Mathf.Max(1, count - 1));
 
         // Project the animated table pose, including cards between slots.
         void DrawLiveCard(Card card)
         {
-            float x = Mathf.Clamp((card.Position.X - 566) / tableSpacing * lensSpacing, -320, 320);
+            float tableAngle = Mathf.Asin(Mathf.Clamp((card.Position.X - RivalFanCenterX) / RivalFanRadius, -1, 1));
+            float x = Mathf.Clamp(tableAngle / step * lensSpacing, -320, 320);
             float y = Mathf.Clamp(-35 + (card.Position.Y - 287) * (44f / 31), -65, 100);
-            float angle = Mathf.Clamp(card.Angle / (half * 0.102f), -1, 1) * 0.19f;
+            float angle = Mathf.Clamp(card.Angle / (half * step), -1, 1) * 0.19f;
             // Keep even the tilted outer corners of a moving card within the lens.
             float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
@@ -706,12 +816,15 @@ public partial class GameScene : Node2D
     private void Paint(Card card, bool hidden)
     {
         float scale = card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
-        DrawSetTransform(card.Position,card.Angle,Vector2.One * scale);
+        bool snapped = card == held && match != null;
+        Vector2 previewOffset = snapped ? new Vector2(12, -18).Rotated(card.Angle) : Vector2.Zero;
+        DrawSetTransform(card.Position + previewOffset,card.Angle,Vector2.One * scale);
 
         Texture2D tex = hidden ? Back : Face(card);
         if (tex != null)
         {
-            DrawTextureRect(tex, bounds, false);
+            bool translucent = snapped || discarding.Contains(card);
+            DrawTextureRect(tex, bounds, false, new Color(1, 1, 1, translucent ? 0.55f : 1));
             if (!hidden) DrawRect(bounds, new Color("#c29b75"), false, 0.8f);
         }
         else if (hidden)
@@ -724,6 +837,11 @@ public partial class GameScene : Node2D
             string label = card.Rank == 0 ? "J" : card.Rank.ToString();
             DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:Ink);
             DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,Ink);
+        }
+        if (hidden && card == landedCard && landingGlow > 0)
+        {
+            DrawRect(bounds, new Color(1, 0.85f, 0.46f, 0.34f * landingGlow));
+            DrawRect(bounds, new Color(1, 0.92f, 0.65f, landingGlow), false, 2);
         }
         bool selected = card == held || (held == null && (card == hoveredMine || card == hoveredRival));
         bool pair = held != null && !fromRival && held.Rank > 0 && mine.Contains(card) && card.Rank == held.Rank;
