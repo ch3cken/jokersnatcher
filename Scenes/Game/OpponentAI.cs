@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 
 public enum OpponentDifficulty { Easy, Normal, Hard }
-internal enum Move { Wait, Steal, Pair, Shuffle }
+internal enum Move { Wait, Steal, Pair, Shuffle, Inspect }
 internal readonly record struct Decision(Move Move, int From = -1, int To = -1);
 
 internal sealed class OpponentAI
@@ -11,6 +11,8 @@ internal sealed class OpponentAI
     private readonly RandomNumberGenerator rng = new();
     private int lastSeen = -1;
     private bool newlyAcquired;
+    private int inspectCooldown;
+    public void RememberInspection(int jokerIndex) => lastSeen = jokerIndex;
 
     public static float Delay(OpponentDifficulty level) => level switch
     {
@@ -44,6 +46,7 @@ internal sealed class OpponentAI
     // The player's cards are hidden: only the count and previously observed movements enter this decision.
     public Decision Choose(OpponentDifficulty level, int[] own, int playerCount, int busy)
     {
+        if (inspectCooldown > 0) inspectCooldown--;
         int joker = Array.IndexOf(own, 0);
         var pair = own.Select((rank, index) => (rank, index))
             .Where(c => c.index != busy && c.rank != 0)
@@ -64,6 +67,12 @@ internal sealed class OpponentAI
             (level == OpponentDifficulty.Easy ? 0.4f : level == OpponentDifficulty.Normal ? 0.65f : 0.82f)))
             return new(Move.Pair, pair.First().index, pair.Skip(1).First().index);
         if (playerCount == 0) return new(Move.Wait);
+        float curiosity = level switch { OpponentDifficulty.Easy => 0.18f, OpponentDifficulty.Hard => 0.55f, _ => 0.35f };
+        if (joker < 0 && playerCount > 1 && inspectCooldown == 0 && rng.Randf() < curiosity)
+        {
+            inspectCooldown = 4;
+            return new(Move.Inspect);
+        }
         float recall = level switch { OpponentDifficulty.Easy => 0.1f, OpponentDifficulty.Hard => 0.88f, _ => 0.55f };
         int pick = lastSeen >= 0 && lastSeen < playerCount && rng.Randf() < recall ? lastSeen : rng.RandiRange(0, playerCount - 1);
         return new(Move.Steal, pick);
