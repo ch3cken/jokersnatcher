@@ -35,6 +35,8 @@ public partial class GameScene : Node2D
         public Vector2 Position;
         public float Angle;
         public bool LeavingRivalHand;
+        public float DrawnScale = PlayerScale;
+        public float Alpha = 1f;
     }
 
     private readonly List<Card> mine = new();
@@ -319,7 +321,6 @@ public partial class GameScene : Node2D
     private int shownCountdown = -1;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
-    private Vector2 center => new(480, 302);
 
     public override void _Ready()
     {
@@ -744,10 +745,20 @@ public partial class GameScene : Node2D
     private void FlyToCenter(Card card)
     {
         SoundEffectManager.Instance?.PlayTakeCard();
+        card.DrawnScale = card.LeavingRivalHand ? RivalScale : PlayerScale;
+        card.Alpha = 1f;
         discarding.Add(card);
+        float fromScale = card.DrawnScale;
+        Vector2 discardTarget = new(480, 450);
         var tween = CreateTween();
-        tween.TweenMethod(Callable.From<Vector2>(p => card.Position = p), card.Position, center, 0.32);
-        tween.TweenCallback(Callable.From(() => discarding.Remove(card)));
+        tween.TweenMethod(Callable.From<Vector2>(p => card.Position = p), card.Position, discardTarget, 0.32)
+            .SetTrans(Tween.TransitionType.Expo)
+            .SetEase(Tween.EaseType.Out);
+        tween.Parallel().TweenMethod(Callable.From<float>(s => card.DrawnScale = s), fromScale, RivalScale, 0.32)
+            .SetTrans(Tween.TransitionType.Expo)
+            .SetEase(Tween.EaseType.Out);
+        tween.Parallel().TweenMethod(Callable.From<float>(a => card.Alpha = a), 1f, 0f, 0.32);
+        tween.Chain().TweenCallback(Callable.From(() => discarding.Remove(card)));
     }
 
     private const float RivalScale = 1.35f, PlayerScale = 2.05f;
@@ -859,20 +870,23 @@ public partial class GameScene : Node2D
             // Keep even the tilted outer corners of a moving card within the lens.
             float maxX = 441 * Mathf.Sqrt(1 - Mathf.Pow((Mathf.Abs(y) + 135) / 401f, 2)) - 101;
             x = Mathf.Clamp(x, -maxX, maxX);
+            float fade = discarding.Contains(card) ? card.Alpha : 1f;
             DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
             if (card.Rank == 0)
             {
-                DrawRect(bounds.Grow(5), new Color("#ffcc7066"));
-                DrawRect(bounds.Grow(2), Gold);
+                DrawRect(bounds.Grow(5), new Color(1f, 0.8f, 0.439f, 0.4f * fade));
+                DrawRect(bounds.Grow(2), new Color(Gold.R, Gold.G, Gold.B, fade));
             }
-            DrawRect(bounds, new Color("#d9d5e2bd"));
+            DrawRect(bounds, new Color(0.851f, 0.835f, 0.886f, 0.741f * fade));
             Texture2D art = Face(card);
             if (art != null)
-                DrawTextureRect(art, bounds, false, new Color(1, 1, 1, 0.74f));
+                DrawTextureRect(art, bounds, false, new Color(1, 1, 1, 0.74f * fade));
             else
                 DrawString(ThemeDB.FallbackFont, new(-38, 9), card.Rank == 0 ? "JOKER" : card.Rank.ToString(),
-                    HorizontalAlignment.Center, 76, card.Rank == 0 ? 20 : 30, Ink);
-            DrawRect(bounds, card.Rank == 0 ? Gold : new Color("#f2e9d7"), false, 1.5f);
+                    HorizontalAlignment.Center, 76, card.Rank == 0 ? 20 : 30, new Color(Ink.R, Ink.G, Ink.B, fade));
+            DrawRect(bounds, card.Rank == 0
+                ? new Color(Gold.R, Gold.G, Gold.B, fade)
+                : new Color(0.949f, 0.914f, 0.843f, fade), false, 1.5f);
         }
         Card moving = reachTime >= 0 && move != Move.Steal ? targetCard : null;
         foreach (Card card in rival)
@@ -887,26 +901,28 @@ public partial class GameScene : Node2D
     }
     private void Paint(Card card, bool hidden)
     {
-        float scale = card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
+        bool fading = discarding.Contains(card);
+        float scale = fading ? card.DrawnScale : card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
+        float alpha = fading ? card.Alpha : 1f;
         DrawSetTransform(card.Position,card.Angle,Vector2.One * scale);
 
         Texture2D tex = hidden ? Back : Face(card);
         if (tex != null)
         {
-            bool translucent = discarding.Contains(card);
-            DrawTextureRect(tex, bounds, false, new Color(1, 1, 1, translucent ? 0.55f : 1));
-            if (!hidden) DrawRect(bounds, new Color("#c29b75"), false, 0.8f);
+            DrawTextureRect(tex, bounds, false, new Color(1, 1, 1, alpha));
+            if (!hidden) DrawRect(bounds, new Color(0.761f, 0.608f, 0.459f, alpha), false, 0.8f);
         }
         else if (hidden)
         {
-            DrawRect(bounds.Grow(-5),Gold,false,2);
-            DrawColoredPolygon(new Vector2[]{new(0,-19),new(12,0),new(0,19),new(-12,0)},Gold);
+            DrawRect(bounds.Grow(-5), new Color(Gold.R, Gold.G, Gold.B, alpha), false, 2);
+            DrawColoredPolygon(new Vector2[]{new(0,-19),new(12,0),new(0,19),new(-12,0)}, new Color(Gold.R, Gold.G, Gold.B, alpha));
         }
         else
         {
             string label = card.Rank == 0 ? "J" : card.Rank.ToString();
-            DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:Ink);
-            DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,Ink);
+            Color ink = new(Ink.R, Ink.G, Ink.B, alpha);
+            DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:ink);
+            DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,ink);
         }
         if (hidden && card == landedCard && landingGlow > 0)
         {
