@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://btitle0000001"]
 
 [ext_resource type="Texture2D" uid="uid://deiyfl2ufmgjq" path="res://icon.svg" id="1_icon"]
+[ext_resource type="Script" uid="uid://dlhvegw4edpug" path="res://TitleScreen.cs" id="2_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_hover"]
 bg_color = Color(0.3, 0.34, 0.44, 1)
@@ -80,6 +81,20 @@ corner_radius_top_right = 32
 corner_radius_bottom_right = 32
 corner_radius_bottom_left = 32
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_popup_panel"]
+bg_color = Color(0.16078432, 0.18039216, 0.23921569, 0.74509805)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.5, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+
 [node name="TitleScreen" type="Control" unique_id=1707766913]
 layout_mode = 3
 anchors_preset = 15
@@ -87,6 +102,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("2_script")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1169152060]
 layout_mode = 1
@@ -164,3 +180,42 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_circle_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_circle_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_circle_hover")
 text = "⚙"
+
+[node name="SettingsPopup" type="PopupPanel" parent="." unique_id=890161988]
+size = Vector2i(240, 156)
+theme_override_styles/panel = SubResource("StyleBoxFlat_popup_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="SettingsPopup" unique_id=1444446989]
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 238.0
+offset_bottom = 158.0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPopup/MarginContainer" unique_id=445755603]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="FullscreenCheckBox" type="CheckBox" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=275186413]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Fullscreen"
+
+[node name="SoundLabel" type="Label" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=1988663825]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Sound"
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=883697281]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
+[connection signal="toggled" from="SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox" to="." method="OnFullscreenCheckBoxToggled"]
+[connection signal="value_changed" from="SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider" to="." method="OnVolumeSliderValueChanged"]
