@@ -35,7 +35,10 @@ public partial class GameScene : Node2D
     private bool dragged;
     private int gap;
     private Vector2 pointer;
-    [Export(PropertyHint.Range, "1,20,0.1")] public float StealInterval { get; set; } = 5;
+    [Export] public OpponentDifficulty Difficulty { get; set; } = OpponentDifficulty.Normal;
+    private readonly OpponentAI ai = new();
+    private Move move;
+    private Card destinationCard;
     private static readonly Vector2 Shoulder = new(420, 214), ArmRest = new(369, 167);
     private const float CatchTime = 0.55f, ReturnStart = 0.68f,
         DepositTime = 1.17f, RestTime = 1.42f;
@@ -52,12 +55,22 @@ public partial class GameScene : Node2D
         if (reachTime < 0)
         {
             restTime += dt;
-            if (restTime < StealInterval || mine.Count == 0) return;
-            targetCard = mine[rng.RandiRange(0, mine.Count - 1)];
+            if (restTime < OpponentAI.Delay(Difficulty)) return;
+            var choice = ai.Choose(Difficulty, rival.Select(c => c.Rank).ToArray(), mine.Count, rival.IndexOf(held));
+            restTime = 0;
+            move = choice.Move;
+            if (move == Move.Wait) return;
+            targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
+            destinationCard = choice.To < 0 ? null : rival[choice.To];
             reachEnd = targetCard.Position;
             reachTime = restTime = 0;
         }
         reachTime += dt;
+        if (move != Move.Steal)
+        {
+            UpdateOwnMove();
+            return;
+        }
         if (targetCard != null && mine.Contains(targetCard)) reachEnd = targetCard.Position;
         if (reachTime < CatchTime)
             paw = ArmRest.Lerp(reachEnd, Phase(reachTime, 0, CatchTime));
@@ -65,8 +78,11 @@ public partial class GameScene : Node2D
         {
             if (targetCard != null)
             {
-                if (mine.Remove(targetCard))
+                int taken = mine.IndexOf(targetCard);
+                if (taken >= 0 && result == null && mine.Remove(targetCard))
                 {
+                    ai.ObserveRemoval(taken);
+                    if (targetCard.Rank == 0) ai.AcquiredJoker();
                     carried = targetCard;
                     if (held == carried) held = match = null;
                     else if (match == carried) match = null;
@@ -91,6 +107,46 @@ public partial class GameScene : Node2D
             }
             if (reachTime >= RestTime) reachTime = -1;
         }
+    }
+
+    private void UpdateOwnMove()
+    {
+        // Revalidate both cards: the player may have picked one up during the approach.
+        const float contact = 0.32f, place = 0.67f, finish = 0.91f;
+        if (reachTime < contact)
+        {
+            if (targetCard != held && rival.Contains(targetCard)) reachEnd = targetCard.Position;
+            paw = ArmRest.Lerp(reachEnd, Phase(reachTime, 0, contact));
+            return;
+        }
+        if (targetCard != null && reachTime < place)
+        {
+            deposit = destinationCard != held && rival.Contains(destinationCard) ? destinationCard.Position : reachEnd;
+            paw = reachEnd.Lerp(deposit, Phase(reachTime, contact, place));
+            if (result == null && rival.Contains(targetCard) && held != targetCard)
+                targetCard.Position = paw;
+            return;
+        }
+        if (targetCard != null)
+        {
+            if (result == null && held != targetCard && held != destinationCard &&
+                rival.Contains(targetCard) && rival.Contains(destinationCard))
+            {
+                int to = rival.IndexOf(destinationCard);
+                rival.Remove(targetCard);
+                if (move == Move.Pair)
+                {
+                    rival.Remove(destinationCard);
+                    FlyToCenter(targetCard);
+                    FlyToCenter(destinationCard);
+                    CheckResult();
+                }
+                else rival.Insert(to, targetCard);
+            }
+            targetCard = destinationCard = null;
+        }
+        paw = deposit.Lerp(ArmRest, Phase(reachTime, place, finish));
+        if (reachTime >= finish) reachTime = -1;
     }
 
     private static float ForegroundScale(float y) => 1 + 0.65f * Phase(y, 205, 505);
@@ -268,7 +324,9 @@ public partial class GameScene : Node2D
                 if (pointer.Y >= 355 && pointer.Y <= 600 && pointer.X >= 0 && pointer.X <= 960)
                 {
                     rival.Remove(held);
-                    mine.Insert(rng.RandiRange(0, mine.Count), held);
+                    int slot = rng.RandiRange(0, mine.Count);
+                    ai.ObserveInsertion(slot, held.Rank == 0);
+                    mine.Insert(slot, held);
                 }
             }
             else if (match != null)
@@ -278,6 +336,7 @@ public partial class GameScene : Node2D
             }
             else if (dragged && pointer.Y >= 355)
             {
+                ai.ObserveReorder(mine.IndexOf(held), gap, Difficulty);
                 mine.Remove(held);
                 mine.Insert(gap, held);
             }
@@ -332,7 +391,13 @@ public partial class GameScene : Node2D
 
     private void Discard(Card card)
     {
+        ai.ObserveRemoval(mine.IndexOf(card));
         mine.Remove(card);
+        FlyToCenter(card);
+    }
+
+    private void FlyToCenter(Card card)
+    {
         discarding.Add(card);
         var tween = CreateTween();
         tween.TweenMethod(Callable.From<Vector2>(p => card.Position = p), card.Position, center, 0.32);
