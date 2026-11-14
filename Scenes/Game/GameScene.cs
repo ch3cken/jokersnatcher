@@ -40,7 +40,7 @@ public partial class GameScene : Node2D
     private readonly Rect2 bounds = new(-38, -60, 76, 120);
     private readonly RandomNumberGenerator rng = new();
     private readonly List<Card> discarding = new();
-    private Card held, match, hoveredRival;
+    private Card held, match, hoveredRival, hoveredMine;
     private bool fromRival, inspecting;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
     private Vector2 pressPoint;
@@ -295,7 +295,8 @@ public partial class GameScene : Node2D
         countdown = Mathf.Max(0, countdown - (float)delta);
         if (held != null) Aim();
         UpdateArm((float)delta);
-        hoveredRival = !inspecting && held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
+        hoveredMine = !inspecting && held == null && countdown <= 0 && result == null ? Pick(mine) : null;
+        hoveredRival = hoveredMine == null && !inspecting && held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
         Layout(1 - Mathf.Exp(-18 * (float)delta));
         QueueRedraw();
     }
@@ -561,7 +562,7 @@ public partial class GameScene : Node2D
             DrawSetTransform(lens + new Vector2(x, y), angle, Vector2.One * 1.85f);
             if (card.Rank == 0)
             {
-                DrawRect(bounds.Grow(5), new Color("#ffda793d"));
+                DrawRect(bounds.Grow(5), new Color("#ffcc7066"));
                 DrawRect(bounds.Grow(2), Gold);
             }
             DrawRect(bounds, new Color("#d9d5e2bd"));
@@ -608,13 +609,14 @@ public partial class GameScene : Node2D
             DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:Ink);
             DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,Ink);
         }
-        if (hidden && (card == hoveredRival || (card == held && fromRival)))
+        bool selected = card == held || (held == null && (card == hoveredMine || card == hoveredRival));
+        bool pair = held != null && !fromRival && held.Rank > 0 && mine.Contains(card) && card.Rank == held.Rank;
+        if (selected || pair)
         {
-            DrawRect(bounds, new Color(1f, 0.90f, 0.69f, 0.12f));
-            DrawRect(bounds.Grow(1), new Color(1f, 0.86f, 0.58f, 0.8f), false, 2);
+            DrawRect(bounds.Grow(2), new Color("#ffb83e66"), false, 3);
+            DrawRect(bounds, new Color("#fff1a032"));
+            DrawRect(bounds.Grow(-1), new Color("#ffdf86"), false, 2);
         }
-        if (held != null && card != held && !hidden && !fromRival && held.Rank > 0 && card.Rank == held.Rank)
-            DrawRect(bounds.Grow(1),Gold,false,4);
         DrawSetTransform(Vector2.Zero,0,Vector2.One);
     }
 }
