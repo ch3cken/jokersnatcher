@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://c4xuqehrmly7q" path="res://Scenes/Game/GameScene.cs" id="1"]
 [ext_resource type="Texture2D" uid="uid://bkapdr1sye6n6" path="res://Art/Used/glass_icon.png" id="20_l6isw"]
+[ext_resource type="Texture2D" path="res://Art/Used/magnified_back.png" id="MagnifiedBackground"]
+[ext_resource type="Texture2D" path="res://Art/Used/magnified_frame.png" id="MagnifiedFrame"]
 [ext_resource type="Texture2D" uid="uid://dpt6vilm2h8rj" path="res://cards/CardBack.png" id="Back"]
 [ext_resource type="Texture2D" uid="uid://c8nkhagwxmxi8" path="res://Art/Used/background.png" id="BackgroundArt"]
 [ext_resource type="Texture2D" uid="uid://c0ew3ar26t1su" path="res://Art/Used/cat/cat.png" id="BodyArt"]
@@ -88,6 +90,8 @@ BodyArt = ExtResource("BodyArt")
 RivalGlassArt = ExtResource("InspectPose")
 GlassArt = ExtResource("GlassArt")
 GlassIcon = ExtResource("20_l6isw")
+MagnifiedBackground = ExtResource("MagnifiedBackground")
+MagnifiedFrame = ExtResource("MagnifiedFrame")
 BackgroundArt = ExtResource("BackgroundArt")
 PartyArt = ExtResource("PartyArt")
 PartyShadow = ExtResource("PartyShadow")

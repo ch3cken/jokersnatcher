@@ -15,6 +15,8 @@ public partial class GameScene : Node2D
     [Export] public Texture2D RivalGlassArt { get; set; }
     [Export] public Texture2D GlassArt { get; set; }
     [Export] public Texture2D GlassIcon {get; set;}
+    [Export] public Texture2D MagnifiedBackground { get; set; }
+    [Export] public Texture2D MagnifiedFrame { get; set; }
     [Export] public Texture2D BackgroundArt { get; set; }
     [Export] public Texture2D PartyArt { get; set; }
     [Export] public Texture2D PartyShadow { get; set; }
@@ -53,6 +55,7 @@ public partial class GameScene : Node2D
     private Card held, hoveredRival, hoveredMine;
     private bool fromRival, inspecting;
     private int playerInspectUses;
+    private Texture2D glassSilhouette;
     private static readonly Rect2 GlassBounds = new(647, 455, 251, 143);
     private static readonly Vector2 InspectBadgeCenter = new(867, 466);
     private const float InspectBadgeWidth = 94f;
@@ -331,6 +334,17 @@ public partial class GameScene : Node2D
 
     public override void _Ready()
     {
+        if (GlassArt != null)
+        {
+            using Image mask = GlassArt.GetImage();
+            if (mask.IsCompressed()) mask.Decompress();
+            mask.Convert(Image.Format.Rgba8);
+            Rect2I area = mask.GetUsedRect();
+            for (int y = area.Position.Y; y < area.End.Y; y++)
+            for (int x = area.Position.X; x < area.End.X; x++)
+                mask.SetPixel(x, y, new Color(1, 1, 1, mask.GetPixel(x, y).A));
+            glassSilhouette = ImageTexture.CreateFromImage(mask);
+        }
         TintFaces(Faces, new Color("#58504b"));
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
@@ -811,6 +825,14 @@ public partial class GameScene : Node2D
             Layer(SleeveBase);
         }
         Layer(TableArt);
+        if (playerInspectUses > 0 && glassSilhouette != null)
+        {
+            bool hovered = held == null && !inspecting && result == null && countdown <= 0 &&
+                GlassBounds.HasPoint(pointer) && RivalGripAtPointer() == null;
+            float width = hovered ? 8 : 4;
+            DrawGlassRim(width + 2, new Color("#694322"));
+            DrawGlassRim(width, hovered ? new Color("#fff3a1") : new Color("#ffbd38"));
+        }
         Layer(GlassArt);
         Layer(GlassIcon);
         DrawInspectUsesCount();
@@ -832,6 +854,8 @@ public partial class GameScene : Node2D
             Vector2 size = new Vector2(92,66) * ForegroundScale(paw.Y);
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
+        if (inspecting && result == null) DrawMagnifier();
+        DrawCenterBanner();
         var hand = held == null ? HandArt : ClosedHandArt;
         if (hand != null && result == null)
         {
@@ -841,8 +865,6 @@ public partial class GameScene : Node2D
             Vector2 hotspot = (fingertip + new Vector2(0.5f, 0.5f)) * handSize / hand.GetSize();
             DrawTextureRect(hand, new Rect2(pointer - hotspot, handSize), false);
         }
-        if (inspecting && result == null) DrawMagnifier();
-        DrawCenterBanner();
     }
 
     private void DrawCenterBanner()
@@ -867,6 +889,15 @@ public partial class GameScene : Node2D
         Layer(banner);
     }
 
+    private void DrawGlassRim(float width, Color color)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 offset = (Vector2.FromAngle(i * Mathf.Tau / 8) * width).Round();
+            DrawTextureRect(glassSilhouette, new Rect2(offset, new Vector2(960, 600)), false, color);
+        }
+    }
+
     private void DrawInspectUsesCount()
     {
         DrawString(
@@ -887,12 +918,7 @@ public partial class GameScene : Node2D
         Transform2D toLocal = GetGlobalTransformWithCanvas().AffineInverse();
         Vector2 corner = toLocal * viewport.Position;
         DrawRect(new Rect2(corner, toLocal * viewport.End - corner).Grow(1), new Color("#171524"));
-        DrawSetTransform(lens, 0, new Vector2(1.10f, 1));
-        DrawCircle(Vector2.Zero, 409, new Color("#b8b0c7"), true, -1, true);
-        DrawCircle(Vector2.Zero, 401, new Color("#45445f"), true, -1, true);
-        DrawArc(Vector2.Zero, 389, 3.4f, 4.22f, 50, new Color("#bbb8d6"), 3, true);
-
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        Layer(MagnifiedBackground);
         int count = rival.Count;
         float half = Mathf.Max(1, (count - 1) * 0.5f);
         float step = FanStep(count, true);
@@ -936,6 +962,7 @@ public partial class GameScene : Node2D
         DrawSetTransform(lens + new Vector2(0, 104), 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(-87, -69, 174, 138), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        Layer(MagnifiedFrame);
     }
     private void Paint(Card card, bool hidden)
     {
