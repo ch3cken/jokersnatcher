@@ -381,6 +381,7 @@ public partial class GameScene : Node2D
         discarding.Clear();
         held = hoveredRival = targetCard = carried = destinationCard = null;
         inspecting = dragged = fromRival = false;
+        playerInspectUses = 0;
         move = Move.Wait;
         reachTime = -1;
         restTime = 0;
@@ -642,6 +643,7 @@ public partial class GameScene : Node2D
             {
                 Discard(pendingPair);
                 Discard(held);
+                playerInspectUses++;
             }
             else if (dragged)
             {
