@@ -103,7 +103,9 @@ public partial class GameScene : Node2D
 
     // A textured ribbon following a quadratic curve keeps the shoulder attached
     // while the invisible elbow passes over the top of the viewport.
-    private void Sleeve(Vector2 start, Vector2 bend, Vector2 end)
+    private static float ForegroundScale(float y) => 1 + 0.65f * Phase(y, 205, 505);
+
+    private void Sleeve(Vector2 start, Vector2 bend, Vector2 end, bool approaching = false)
     {
         if (ArmArt == null) return;
         const int steps = 12;
@@ -116,6 +118,7 @@ public partial class GameScene : Node2D
             Vector2 a = start.Lerp(bend, t), b = bend.Lerp(end, t);
             Vector2 normal = (b - a).Normalized().Orthogonal() * Mathf.Lerp(18, 15, t);
             Vector2 point = a.Lerp(b, t);
+            if (approaching) normal *= ForegroundScale(point.Y);
             int opposite = 2 * side - 1 - i;
             outline[i] = point + normal;
             outline[opposite] = point - normal;
@@ -328,25 +331,32 @@ public partial class GameScene : Node2D
         DrawShoulder();
         foreach (var card in rival) if (card != held) Paint(card, true);
         if (RivalPawArt != null)
-            DrawTextureRect(RivalPawArt, new Rect2(530, 229, 70, 56), false);
+        {
+            DrawSetTransform(new Vector2(565, 257), Mathf.Pi, Vector2.One);
+            DrawTextureRect(RivalPawArt, new Rect2(-35, -28, 70, 56), false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         foreach (var card in mine) if (card != held) Paint(card, false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
         if (WristOverTable && paw.Y > Sky + 2)
         {
             Vector2 top = new(reachEnd.X - 52, Sky - 40);
-            Sleeve(top, new(top.X - 25, (top.Y + paw.Y) / 2), paw);
+            Sleeve(top, new(top.X - 25, (top.Y + paw.Y) / 2), paw, approaching: true);
         }
         if (carried != null) Paint(carried, reachTime >= WristOffscreen);
         var activePaw = reachTime < LiftEnd || reachTime >= DepositTime ? PalmArt : RivalPawArt;
         if (activePaw != null)
-            DrawTextureRect(activePaw, new Rect2(paw - new Vector2(33, 29), new Vector2(66, 58)), false);
+        {
+            Vector2 size = new Vector2(66, 58) * (WristOverTable ? ForegroundScale(paw.Y) : 1);
+            DrawTextureRect(activePaw, new Rect2(paw - size / 2, size), false);
+        }
         if (HandArt != null)
         {
             Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(738,341);
-            DrawTextureRect(HandArt,new Rect2(tip - new Vector2(4,18),new Vector2(90,75)),false);
+            DrawTextureRect(HandArt,new Rect2(tip - new Vector2(6,25),new Vector2(126,105)),false);
             // The other paw supports the player hand from underneath.
-            DrawTextureRect(HandArt,new Rect2(222,534,124,103),false);
+            DrawTextureRect(HandArt,new Rect2(204,520,162,135),false);
         }
         if (countdown > 0 || result != null)
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
