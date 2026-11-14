@@ -379,7 +379,7 @@ public partial class GameScene : Node2D
         mine.Clear();
         rival.Clear();
         discarding.Clear();
-        held = match = hoveredRival = targetCard = carried = destinationCard = null;
+        held = hoveredRival = targetCard = carried = destinationCard = null;
         inspecting = dragged = fromRival = false;
         move = Move.Wait;
         reachTime = -1;
@@ -666,6 +666,18 @@ public partial class GameScene : Node2D
             held = pendingPair = null;
         }
     }
+
+    private void PlayTakeCardSound()
+    {
+        if (TakeCardSounds == null || TakeCardSounds.Length == 0) return;
+        var validSounds = TakeCardSounds.Where(s => s != null).ToArray();
+        if (validSounds.Length == 0) return;
+        cardSoundPlayer.Stream = validSounds[rng.RandiRange(0, validSounds.Length - 1)];
+        cardSoundPlayer.Play();
+    }
+
+    private Card pendingPair;
+    private const float RivalDrawDistance = 75;
 
     private void Aim()
     {
