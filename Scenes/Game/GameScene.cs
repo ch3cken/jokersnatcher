@@ -98,13 +98,22 @@ public partial class GameScene : Node2D
         if (button.Pressed && held == null)
         {
             held = Pick(mine);
-            fromRival = false;
+            fromRival = held == null;
+            if (fromRival) held = Pick(rival);
             if (held != null) Aim();
         }
         else if (!button.Pressed && held != null)
         {
             Aim();
-            if (match != null)
+            if (fromRival)
+            {
+                if (pointer.Y >= 355 && pointer.Y <= 600 && pointer.X >= 0 && pointer.X <= 960)
+                {
+                    rival.Remove(held);
+                    mine.Insert(rng.RandiRange(0, mine.Count), held);
+                }
+            }
+            else if (match != null)
             {
                 Discard(match);
                 Discard(held);
@@ -115,6 +124,8 @@ public partial class GameScene : Node2D
                 mine.Insert(gap, held);
             }
             held = match = null;
+            if (mine.Count == 1 && mine[0].Rank == 0) result = "WIN";
+            if (rival.Count == 1 && rival[0].Rank == 0) result = "LOSE";
         }
         QueueRedraw();
     }
