@@ -47,6 +47,8 @@ public partial class SoundEffectManager : Node
 	}
 
 	public void PlayTakeCard() => PlaySound((int)Effect.TakeCard);
+	public void PlayCard() => PlaySound(_rng.RandiRange((int)Effect.Card1, (int)Effect.Card4));
+	public void PlayDeal() => PlaySound((int)Effect.Deal);
 	public void PlayButtonHover() => PlaySound((int)Effect.ButtonHover);
 	public void PlayButtonClick() => PlaySound((int)Effect.ButtonClick);
 	public void PlayGameStart() => PlaySound((int)Effect.GameStart);
@@ -74,5 +76,10 @@ public partial class SoundEffectManager : Node
 		MagnifierEnd,
 		EnemyMagnifier,
 		ReturnToMain,
+		Card1,
+		Card2,
+		Card3,
+		Card4,
+		Deal,
 	}
 }

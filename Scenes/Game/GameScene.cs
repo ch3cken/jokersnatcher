@@ -128,7 +128,7 @@ public partial class GameScene : Node2D
                     if (targetCard.Rank == 0) ai.AcquiredJoker();
                     carried = targetCard;
                     pickupAngle = carried.Angle;
-                    SoundEffectManager.Instance?.PlayTakeCard();
+                    SoundEffectManager.Instance?.PlayCard();
                     if (held == carried) held = null;
                     if (held == null || carried == pendingPair) pendingPair = null;
                 }
@@ -166,6 +166,7 @@ public partial class GameScene : Node2D
                     landedCard = carried;
                     landingGlow = 1;
                     carried = null;
+                    SoundEffectManager.Instance?.PlayCard();
                     CheckResult();
                 }
             }
@@ -214,6 +215,7 @@ public partial class GameScene : Node2D
                     rival.Insert(to, targetCard);
                     landedCard = targetCard;
                     landingGlow = 1;
+                    SoundEffectManager.Instance?.PlayCard();
                 }
             }
             targetCard = destinationCard = null;
@@ -402,6 +404,7 @@ public partial class GameScene : Node2D
         rival.Insert(rng.RandiRange(0, rival.Count), new Card(0));
         Fit();
         Layout(1);
+        SoundEffectManager.Instance?.PlayDeal();
     }
 
     private void Fit()
@@ -635,7 +638,11 @@ public partial class GameScene : Node2D
                 reachTime = 0.67f;
             }
             hoveredRival = null;
-            if (held != null) Aim();
+            if (held != null)
+            {
+                Aim();
+                SoundEffectManager.Instance?.PlayCard();
+            }
         }
         else if (!button.Pressed && held != null)
         {
@@ -648,6 +655,7 @@ public partial class GameScene : Node2D
                     int slot = rng.RandiRange(0, mine.Count);
                     ai.ObserveInsertion(slot, held.Rank == 0);
                     mine.Insert(slot, held);
+                    SoundEffectManager.Instance?.PlayCard();
                 }
             }
             else if (pendingPair != null)
@@ -664,6 +672,7 @@ public partial class GameScene : Node2D
                 held.Angle = SlotAngle(gap, mine.Count, false);
                 held.Position = Slot(gap, mine.Count, false);
                 lastDropPointer = pointer;
+                SoundEffectManager.Instance?.PlayCard();
             }
             held = pendingPair = null;
             CheckResult();
@@ -734,6 +743,7 @@ public partial class GameScene : Node2D
 
     private void FlyToCenter(Card card)
     {
+        SoundEffectManager.Instance?.PlayTakeCard();
         discarding.Add(card);
         var tween = CreateTween();
         tween.TweenMethod(Callable.From<Vector2>(p => card.Position = p), card.Position, center, 0.32);
