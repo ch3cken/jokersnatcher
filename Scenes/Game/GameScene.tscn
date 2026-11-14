@@ -4,15 +4,14 @@
 [ext_resource type="Texture2D" uid="uid://2y7qx68shwhp" path="res://Art/Placeholders/Arm.svg" id="Arm"]
 [ext_resource type="Texture2D" uid="uid://lqwh04bdcpq1" path="res://Art/Placeholders/Body.svg" id="Body"]
 [ext_resource type="Texture2D" uid="uid://do38q0cmec6ey" path="res://Art/Placeholders/Glass.svg" id="Glass"]
+[ext_resource type="Texture2D" uid="uid://drsfjgc5ukhpi" path="res://Art/Placeholders/RivalPalm.svg" id="Palm"]
 [ext_resource type="Texture2D" uid="uid://8gehsf6tvwgm" path="res://Art/Placeholders/PlayerPaw.svg" id="PlayerPaw"]
 [ext_resource type="Texture2D" uid="uid://b6c31js0fiexa" path="res://Art/Placeholders/RivalPaw.svg" id="RivalPaw"]
 
-[ext_resource type="Texture2D" path="res://Art/Placeholders/RivalPalm.svg" id="Palm"]
-
 [node name="GameScene" type="Node2D" unique_id=1890567042]
 script = ExtResource("1")
-PalmArt = ExtResource("Palm")
 HandArt = ExtResource("PlayerPaw")
+PalmArt = ExtResource("Palm")
 BodyArt = ExtResource("Body")
 GlassArt = ExtResource("Glass")
 ArmArt = ExtResource("Arm")
