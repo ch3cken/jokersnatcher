@@ -10,6 +10,11 @@ public partial class GameScene : Node2D
     [Export] public Texture2D TableArt { get; set; }
     [Export] public Texture2D HandArt { get; set; }
 
+     [Export] public Texture2D BodyArt { get; set; }
+    [Export] public Texture2D GlassArt { get; set; }
+    [Export] public Texture2D ArmArt { get; set; }
+    [Export] public Texture2D RivalPawArt { get; set; }
+
     private sealed class Card(int rank)
     {
         public readonly int Rank = rank;
@@ -174,24 +179,20 @@ public partial class GameScene : Node2D
     public override void _Draw()
     {
         DrawRect(new Rect2(0, 0, 960, 600), Ink);
-        DrawCircle(new(480,128), 77, Paper);
-        DrawColoredPolygon(new Vector2[]{new(410,108),new(416,31),new(460,64)}, Paper);
-        DrawColoredPolygon(new Vector2[]{new(500,64),new(548,32),new(550,108)}, Paper);
-        DrawCircle(new(453,115),5,Ink);
-        DrawCircle(new(505,115),5,Ink);
-        DrawRect(new Rect2(0,233,960,367), new Color("#48446b"));
-        DrawLine(new(0,235),new(960,235),new Color("#78719a"),4);
+        DrawRect(new Rect2(0,295,960,305), new Color("#48446b"));
         if (TableArt != null) DrawTextureRect(TableArt,new Rect2(0,0,960,600),false);
+        if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
+        if (GlassArt != null) DrawTextureRect(GlassArt,new Rect2(684,439,139,113),false);
         foreach (var card in rival) if (card != held) Paint(card, true);
         foreach (var card in mine) if (card != held) Paint(card, false);
         foreach (var card in discarding) Paint(card, false);
         if (held != null) Paint(held, fromRival);
-        if (HandArt != null) DrawTextureRect(HandArt,new Rect2(pointer,new Vector2(48,48)),false);
-        else
+        if (HandArt != null)
         {
-            DrawCircle(pointer + new Vector2(12,18), 12, new Color("#cb834f"));
-            DrawLine(pointer + new Vector2(8,14),pointer,new Color("#efaa72"),7,true);
-            DrawCircle(pointer,3.5f,new Color("#efaa72"));
+            Vector2 tip = new Rect2(0,0,960,600).HasPoint(pointer) ? pointer : new Vector2(738,341);
+            DrawTextureRect(HandArt,new Rect2(tip - new Vector2(4,18),new Vector2(90,75)),false);
+            // The other paw supports the player hand from underneath.
+            DrawTextureRect(HandArt,new Rect2(222,534,124,103),false);
         }
         if (countdown > 0 || result != null)
             DrawString(ThemeDB.FallbackFont,new(0,325),result ?? Mathf.CeilToInt(countdown).ToString(),HorizontalAlignment.Center,960,52,Gold);
