@@ -17,7 +17,7 @@
 [ext_resource type="Texture2D" path="res://Art/Used/player/floating hold.png" id="ClosedHandArt"]
 [ext_resource type="Texture2D" path="res://Art/Used/player/my hand.png" id="PlayerSupport"]
 [ext_resource type="Texture2D" path="res://Art/Used/player/thumb.png" id="ThumbArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/playable-back.svg" id="Back"]
+[ext_resource type="Texture2D" path="res://cards/CardBack.png" id="Back"]
 [ext_resource type="Texture2D" path="res://cards/Joker.png" id="Joker"]
 [ext_resource type="Texture2D" path="res://cards/Spades1.png" id="Spades1"]
 [ext_resource type="Texture2D" path="res://cards/Spades2.png" id="Spades2"]
