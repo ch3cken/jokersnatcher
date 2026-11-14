@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://b7npn3mws7b3f" path="res://Art/Used/cat/cards1.png" id="8_fbuyo"]
 [ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="9_xruoh"]
 [ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="10_72lsw"]
+[ext_resource type="FontFile" uid="uid://d4bdx051x347b" path="res://COMIC.TTF" id="11_xsi77"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_hover"]
 bg_color = Color(0.3, 0.34, 0.44, 1)
@@ -202,18 +203,21 @@ alignment = 1
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_xsi77")
 text = "Easy"
 
 [node name="NormalButton" type="Button" parent="DifficultyButtons" unique_id=1962110241]
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_xsi77")
 text = "Normal"
 
 [node name="HardButton" type="Button" parent="DifficultyButtons" unique_id=361955009]
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("11_xsi77")
 text = "Hard"
 
 [node name="SettingsButton" type="Button" parent="DifficultyButtons" unique_id=942626994]
@@ -233,6 +237,9 @@ offset_top = 36.0
 offset_right = 1104.0
 offset_bottom = 146.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.33333334)
+theme_override_constants/shadow_offset_x = 2
+theme_override_fonts/font = ExtResource("11_xsi77")
 theme_override_font_sizes/font_size = 80
 text = "Joker Snatcher"
 horizontal_alignment = 1
@@ -259,11 +266,13 @@ theme_override_constants/separation = 14
 
 [node name="FullscreenCheckBox" type="CheckBox" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=275186413]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("11_xsi77")
 theme_override_font_sizes/font_size = 20
 text = "Fullscreen"
 
 [node name="SoundLabel" type="Label" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=1988663825]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("11_xsi77")
 theme_override_font_sizes/font_size = 20
 text = "Sound"
 
