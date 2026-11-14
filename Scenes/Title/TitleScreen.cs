@@ -2,6 +2,10 @@ using Godot;
 
 public partial class TitleScreen : Control
 {
+	[Export(PropertyHint.Range, "10,1000,1")]
+	public float CatRiseSpeed { get; set; } = 150.0f;
+
+	private TextureRect _catRect;
 	private Button _settingsButton;
 	private PopupPanel _settingsPopup;
 	private CheckBox _fullscreenCheckBox;
@@ -11,7 +15,10 @@ public partial class TitleScreen : Control
 
 	public override void _Ready()
 	{
-		_settingsButton = GetNode<Button>("MainLayout/VBoxContainer/DifficultyButtons/SettingsButton");
+		_catRect = GetNode<TextureRect>("Background/CatRect");
+		_catRect.Position = new Vector2(_catRect.Position.X, 200.0f);
+
+		_settingsButton = GetNode<Button>("DifficultyButtons/SettingsButton");
 		_settingsPopup = GetNode<PopupPanel>("SettingsPopup");
 		_fullscreenCheckBox = GetNode<CheckBox>("SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox");
 		_volumeSlider = GetNode<HSlider>("SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider");
@@ -34,9 +41,31 @@ public partial class TitleScreen : Control
 		_volumeSlider.SetValueNoSignal(currentLinearVolume);
 	}
 
+	public override void _Process(double delta)
+	{
+		if (_catRect != null && _catRect.Position.Y > 0.0f)
+		{
+			float newY = Mathf.MoveToward(_catRect.Position.Y, 0.0f, CatRiseSpeed * (float)delta);
+			_catRect.Position = new Vector2(_catRect.Position.X, newY);
+		}
+	}
+
 	private void OnSettingsPopupHide()
 	{
 		_lastPopupHideMsec = Time.GetTicksMsec();
+	}
+
+	public void OnPlayButtonPressed(int difficulty)
+	{
+		PackedScene gamePackedScene = GD.Load<PackedScene>("res://Scenes/Game/GameScene.tscn");
+		GameScene gameScene = gamePackedScene.Instantiate<GameScene>();
+		gameScene.Difficulty = (OpponentDifficulty)difficulty;
+
+		SceneTree tree = GetTree();
+		Node currentScene = tree.CurrentScene;
+		tree.Root.AddChild(gameScene);
+		tree.CurrentScene = gameScene;
+		currentScene?.QueueFree();
 	}
 
 	public void OnSettingsButtonPressed()

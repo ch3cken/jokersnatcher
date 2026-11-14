@@ -1,8 +1,16 @@
 [gd_scene format=3 uid="uid://btitle0000001"]
 
-[ext_resource type="Texture2D" uid="uid://deiyfl2ufmgjq" path="res://icon.svg" id="1_icon"]
+[ext_resource type="Texture2D" uid="uid://c8nkhagwxmxi8" path="res://Art/Used/background.png" id="2_pm0r6"]
 [ext_resource type="Script" uid="uid://dlhvegw4edpug" path="res://Scenes/Title/TitleScreen.cs" id="2_script"]
 [ext_resource type="Script" uid="uid://b8tci12luj54s" path="res://Scenes/Title/CalloutStyleBox.cs" id="3_callout_style"]
+[ext_resource type="Texture2D" uid="uid://cggfwxf0eo802" path="res://Art/Used/object.png" id="3_pm0r6"]
+[ext_resource type="Texture2D" uid="uid://q4gewuforj7e" path="res://Art/Used/shadow.png" id="4_7fh0p"]
+[ext_resource type="Texture2D" uid="uid://dk2ba8imvfalu" path="res://Art/Used/party.png" id="5_xsi77"]
+[ext_resource type="Texture2D" uid="uid://c0ew3ar26t1su" path="res://Art/Used/cat/cat.png" id="6_l1yp5"]
+[ext_resource type="Texture2D" uid="uid://ord7brjjxulm" path="res://Art/Used/cat/face.png" id="7_rv8x5"]
+[ext_resource type="Texture2D" uid="uid://b7npn3mws7b3f" path="res://Art/Used/cat/cards1.png" id="8_fbuyo"]
+[ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="9_xruoh"]
+[ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="10_72lsw"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rect_hover"]
 bg_color = Color(0.3, 0.34, 0.44, 1)
@@ -99,75 +107,116 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_script")
+CatRiseSpeed = 70.0
 
-[node name="Background" type="ColorRect" parent="." unique_id=1169152060]
+[node name="Background" type="TextureRect" parent="." unique_id=2091459757]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.11, 0.12, 0.15, 1)
-
-[node name="MainLayout" type="MarginContainer" parent="." unique_id=381744686]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 48
-theme_override_constants/margin_top = 36
-theme_override_constants/margin_right = 48
-theme_override_constants/margin_bottom = 48
-
-[node name="VBoxContainer" type="VBoxContainer" parent="MainLayout" unique_id=1551295596]
-layout_mode = 2
-theme_override_constants/separation = 24
-
-[node name="TitleLabel" type="Label" parent="MainLayout/VBoxContainer" unique_id=885945664]
-layout_mode = 2
-theme_override_font_sizes/font_size = 80
-text = "Joker Snatcher"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CenterImageContainer" type="CenterContainer" parent="MainLayout/VBoxContainer" unique_id=2127587807]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="PlaceholderImage" type="TextureRect" parent="MainLayout/VBoxContainer/CenterImageContainer" unique_id=93025624]
-custom_minimum_size = Vector2(240, 240)
-layout_mode = 2
-texture = ExtResource("1_icon")
+texture = ExtResource("2_pm0r6")
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
 
-[node name="DifficultyButtons" type="HBoxContainer" parent="MainLayout/VBoxContainer" unique_id=1418640760]
-layout_mode = 2
+[node name="LampRect" type="TextureRect" parent="Background" unique_id=901231772]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("3_pm0r6")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PartyShadowRect" type="TextureRect" parent="Background" unique_id=153211761]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("4_7fh0p")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PartyRect" type="TextureRect" parent="Background" unique_id=179373084]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("5_xsi77")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CatRect" type="TextureRect" parent="Background" unique_id=285177737]
+layout_mode = 0
+offset_top = 200.0
+offset_right = 1152.0
+offset_bottom = 848.0
+texture = ExtResource("6_l1yp5")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="FaceRect" type="TextureRect" parent="Background/CatRect" unique_id=1394949233]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("7_rv8x5")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Cards" type="TextureRect" parent="Background/CatRect" unique_id=613010301]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("8_fbuyo")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CardHand" type="TextureRect" parent="Background/CatRect" unique_id=1546437642]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("9_xruoh")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TableRect" type="TextureRect" parent="Background" unique_id=30956323]
+layout_mode = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+texture = ExtResource("10_72lsw")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DifficultyButtons" type="HBoxContainer" parent="." unique_id=1418640760]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 534.0
+offset_right = 1104.0
+offset_bottom = 598.0
 theme = SubResource("Theme_difficulty_buttons")
 theme_override_constants/separation = 32
 alignment = 1
 
-[node name="EasyButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=1518661455]
+[node name="EasyButton" type="Button" parent="DifficultyButtons" unique_id=1518661455]
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Easy"
 
-[node name="NormalButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=1962110241]
+[node name="NormalButton" type="Button" parent="DifficultyButtons" unique_id=1962110241]
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Normal"
 
-[node name="HardButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=361955009]
+[node name="HardButton" type="Button" parent="DifficultyButtons" unique_id=361955009]
 custom_minimum_size = Vector2(180, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Hard"
 
-[node name="SettingsButton" type="Button" parent="MainLayout/VBoxContainer/DifficultyButtons" unique_id=942626994]
+[node name="SettingsButton" type="Button" parent="DifficultyButtons" unique_id=942626994]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 tooltip_text = "Settings"
@@ -176,6 +225,18 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_circle_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_circle_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_circle_hover")
 text = "⚙"
+
+[node name="TitleLabel" type="Label" parent="." unique_id=885945664]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 36.0
+offset_right = 1104.0
+offset_bottom = 146.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 80
+text = "Joker Snatcher"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SettingsPopup" type="PopupPanel" parent="." unique_id=890161988]
 oversampling_override = 1.0
@@ -213,6 +274,9 @@ max_value = 1.0
 step = 0.01
 value = 1.0
 
-[connection signal="pressed" from="MainLayout/VBoxContainer/DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
+[connection signal="pressed" from="DifficultyButtons/EasyButton" to="." method="OnPlayButtonPressed" binds= [0]]
+[connection signal="pressed" from="DifficultyButtons/NormalButton" to="." method="OnPlayButtonPressed" binds= [1]]
+[connection signal="pressed" from="DifficultyButtons/HardButton" to="." method="OnPlayButtonPressed" binds= [2]]
+[connection signal="pressed" from="DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
 [connection signal="toggled" from="SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox" to="." method="OnFullscreenCheckBoxToggled"]
 [connection signal="value_changed" from="SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider" to="." method="OnVolumeSliderValueChanged"]
