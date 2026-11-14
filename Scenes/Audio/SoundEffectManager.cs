@@ -18,6 +18,7 @@ public partial class SoundEffectManager : Node
 
 	public override void _Ready()
 	{
+		_rng.Randomize();
 		for (int i = 0; i < PlayerPoolSize; i++)
 		{
 			_players[i] = new AudioStreamPlayer();
@@ -41,8 +42,35 @@ public partial class SoundEffectManager : Node
 		AudioStreamPlayer player = _players[_nextPlayerIndex];
 		_nextPlayerIndex = (_nextPlayerIndex + 1) % PlayerPoolSize;
 		player.Stream = stream;
+		player.PitchScale = _rng.RandfRange(0.9f, 1.1f);
 		player.Play();
 	}
 
-	public void PlayTakeCard() => PlaySound(0);
+	public void PlayTakeCard() => PlaySound((int)Effect.TakeCard);
+	public void PlayButtonHover() => PlaySound((int)Effect.ButtonHover);
+	public void PlayButtonClick() => PlaySound((int)Effect.ButtonClick);
+	public void PlayGameStart() => PlaySound((int)Effect.GameStart);
+	public void PlayCountdown() => PlaySound((int)Effect.Countdown);
+	public void PlayDefeat() => PlaySound((int)Effect.Defeat);
+	public void PlayVictory() => PlaySound((int)Effect.Victory);
+	public void PlayResultEnter() => PlaySound((int)Effect.ResultEnter);
+	public void PlayMagnifierStart() => PlaySound((int)Effect.MagnifierStart);
+	public void PlayMagnifierEnd() => PlaySound((int)Effect.MagnifierEnd);
+	public void PlayEnemyMagnifier() => PlaySound((int)Effect.EnemyMagnifier);
+
+	private enum Effect
+	{
+		TakeCard,
+		TakeCardAlt,
+		ButtonHover,
+		ButtonClick,
+		GameStart,
+		Countdown,
+		Defeat,
+		Victory,
+		ResultEnter,
+		MagnifierStart,
+		MagnifierEnd,
+		EnemyMagnifier,
+	}
 }

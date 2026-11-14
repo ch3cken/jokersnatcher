@@ -3,7 +3,17 @@
 [ext_resource type="Script" path="res://Scenes/Audio/SoundEffectManager.cs" id="1_script"]
 [ext_resource type="AudioStream" path="res://cards/takecard1.mp3" id="2_takecard1"]
 [ext_resource type="AudioStream" path="res://cards/takecard2.mp3" id="3_takecard2"]
+[ext_resource type="AudioStream" uid="uid://6k4x1oir1bc2" path="res://Sound/Clicked_In.wav" id="4_hover"]
+[ext_resource type="AudioStream" uid="uid://bevnaujef6stt" path="res://Sound/Button_Pressed.wav" id="5_click"]
+[ext_resource type="AudioStream" uid="uid://bvo270hvpoqkn" path="res://Sound/Confirm.wav" id="6_start"]
+[ext_resource type="AudioStream" uid="uid://c7tuomc1yexni" path="res://Sound/Lock.wav" id="7_countdown"]
+[ext_resource type="AudioStream" uid="uid://ck4mccc581unw" path="res://Sound/Failure.wav" id="8_defeat"]
+[ext_resource type="AudioStream" uid="uid://bf5w2rsukfm71" path="res://Sound/Success.wav" id="9_victory"]
+[ext_resource type="AudioStream" uid="uid://njhbfqlltgcl" path="res://Sound/Purchase.wav" id="10_result"]
+[ext_resource type="AudioStream" uid="uid://bpgmkexgw18di" path="res://Sound/Cancel.wav" id="11_mag_start"]
+[ext_resource type="AudioStream" uid="uid://d3u1n6wiikwca" path="res://Sound/Menu_Close.wav" id="12_mag_end"]
+[ext_resource type="AudioStream" uid="uid://ch1ooodskbvy4" path="res://Sound/Currency.wav" id="13_enemy_mag"]
 
 [node name="SoundEffectManager" type="Node"]
 script = ExtResource("1_script")
-SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2")])
+SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2"), ExtResource("4_hover"), ExtResource("5_click"), ExtResource("6_start"), ExtResource("7_countdown"), ExtResource("8_defeat"), ExtResource("9_victory"), ExtResource("10_result"), ExtResource("11_mag_start"), ExtResource("12_mag_end"), ExtResource("13_enemy_mag")])
