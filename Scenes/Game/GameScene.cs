@@ -28,7 +28,7 @@ public partial class GameScene : Node2D
     private readonly Rect2 bounds = new(-38, -60, 76, 120);
     private readonly RandomNumberGenerator rng = new();
     private readonly List<Card> discarding = new();
-    private Card held, match;
+    private Card held, match, hoveredRival;
     private bool fromRival;
     private Vector2 pressPoint;
     private bool dragged;
@@ -178,6 +178,7 @@ public partial class GameScene : Node2D
         countdown = Mathf.Max(0, countdown - (float)delta);
         if (held != null) Aim();
         UpdateArm((float)delta);
+        hoveredRival = held == null && result == null && countdown <= 0 ? RivalAtPointer() : null;
         Layout(1 - Mathf.Exp(-18 * (float)delta));
         QueueRedraw();
     }
@@ -190,6 +191,18 @@ public partial class GameScene : Node2D
                    upper ? 198 + arc * 18 : 484 + arc * 23);
     }
 
+    private Card RivalAtPointer()
+    {
+        // Resting positions keep the cursor on the same card while its neighbours slide.
+        for (int i = rival.Count - 1; i >= 0; i--)
+        {
+            float angle = (i - (rival.Count - 1) / 2f) * 0.072f;
+            Vector2 local = (pointer - Slot(i, rival.Count, true)).Rotated(-angle);
+            if (bounds.HasPoint(local)) return rival[i];
+        }
+        return null;
+    }
+
     private void Layout(float weight)
     {
         foreach (bool upper in new[] { false, true })
@@ -198,7 +211,7 @@ public partial class GameScene : Node2D
             int count = cards.Count(c => c != held);
             bool opening = !upper && held != null && !fromRival && match == null;
             int slots = count + (opening ? 1 : 0);
-            int focus = -1;
+            int focus = upper && hoveredRival != null ? rival.IndexOf(hoveredRival) : -1;
             if (!upper && held == null)
             {
                 // Use resting positions so the opening gap cannot move its own trigger.
@@ -243,7 +256,8 @@ public partial class GameScene : Node2D
             dragged = false;
             held = Pick(mine);
             fromRival = held == null;
-            if (fromRival) held = Pick(rival);
+            if (fromRival) held = RivalAtPointer();
+            hoveredRival = null;
             if (held != null) Aim();
         }
         else if (!button.Pressed && held != null)
@@ -329,7 +343,8 @@ public partial class GameScene : Node2D
         if (BodyArt != null) DrawTextureRect(BodyArt,new Rect2(372,48,238,248),false);
         if (GlassArt != null) DrawTextureRect(GlassArt,new Rect2(684,439,139,113),false);
         DrawShoulder();
-        foreach (var card in rival) if (card != held) Paint(card, true);
+        foreach (var card in rival) if (card != held && card != hoveredRival) Paint(card, true);
+        if (hoveredRival != null) Paint(hoveredRival, true);
         if (RivalPawArt != null)
         {
             DrawSetTransform(new Vector2(565, 257), Mathf.Pi, Vector2.One);
@@ -379,6 +394,11 @@ public partial class GameScene : Node2D
             string label = card.Rank == 0 ? "J" : card.Rank.ToString();
             DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:Ink);
             DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,Ink);
+        }
+        if (hidden && (card == hoveredRival || (card == held && fromRival)))
+        {
+            DrawRect(bounds, new Color(1f, 0.90f, 0.69f, 0.12f));
+            DrawRect(bounds.Grow(1), new Color(1f, 0.86f, 0.58f, 0.8f), false, 2);
         }
         if (held != null && card != held && !hidden && !fromRival && held.Rank > 0 && card.Rank == held.Rank)
             DrawRect(bounds.Grow(1),Gold,false,4);
