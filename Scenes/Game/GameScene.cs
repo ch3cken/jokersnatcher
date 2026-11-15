@@ -886,16 +886,16 @@ public partial class GameScene : Node2D
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         bool heldInFront = held != null && fromRival && RivalDrawProgress < 0.5f;
-        if (held != null && !heldInFront) Paint(held, fromRival);
         foreach (var card in rival) if (card != held && card != lifted) Paint(card, true, rivalSway);
         DrawSetTransform(rivalSway, 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(533,314,117,104), false);
         if (reachTime < 0 && PalmArt != null)
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
+        if (held != null && !heldInFront) Paint(held, fromRival);
         foreach (var card in mine) if (card != held) Paint(card, false, playerSway);
         foreach (var card in discarding) Paint(card, false);
-        if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
         if (carried != null) Paint(carried, false);
         if (!checking && reachTime >= 0 && RivalPawArt != null)
         {
