@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SoundEffectManager="*res://Scenes/Audio/sound_effect_manager.tscn"
+BgmManager="*res://Scenes/Audio/bgm_manager.tscn"
 
 [display]
 

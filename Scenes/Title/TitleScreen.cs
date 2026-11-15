@@ -55,6 +55,7 @@ public partial class TitleScreen : Control
 		int masterBusIndex = AudioServer.GetBusIndex("Master");
 		float currentLinearVolume = Mathf.DbToLinear(AudioServer.GetBusVolumeDb(masterBusIndex));
 		_volumeSlider.SetValueNoSignal(currentLinearVolume);
+		BgmManager.Instance?.TitleBGM();
 	}
 
 	public override void _Process(double delta)

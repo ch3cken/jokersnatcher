@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cfr3wfn88a12t"
+path="res://.godot/imported/Week 15 - Sunburn SPF 3000.ogg-a9e93e3fcf9f0a279f4b71f11c1a2bce.oggvorbisstr"
+
+[deps]
+
+source_file="res://Sound/Week 15 - Sunburn SPF 3000.ogg"
+dest_files=["res://.godot/imported/Week 15 - Sunburn SPF 3000.ogg-a9e93e3fcf9f0a279f4b71f11c1a2bce.oggvorbisstr"]
+
+[params]
+
+loop=true
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
