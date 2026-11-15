@@ -225,7 +225,7 @@ texture = ExtResource("8_fbuyo")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CardHand" type="TextureRect" parent="Background/CatRect" unique_id=1546437642]
+[node name="CardHand" type="TextureRect" parent="Background/CatRect/Cards" unique_id=1546437642]
 layout_mode = 0
 offset_right = 1152.0
 offset_bottom = 648.0

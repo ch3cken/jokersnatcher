@@ -6,6 +6,8 @@ public partial class TitleScreen : Control
 	public float CatRiseSpeed { get; set; } = 150.0f;
 
 	private TextureRect _catRect;
+	private TextureRect _cardsRect;
+	private float _swayTime = 0.0f;
 	private Button _settingsButton;
 	private PopupPanel _settingsPopup;
 	private CheckBox _fullscreenCheckBox;
@@ -17,6 +19,10 @@ public partial class TitleScreen : Control
 	{
 		_catRect = GetNode<TextureRect>("Background/CatRect");
 		_catRect.Position = new Vector2(_catRect.Position.X, 200.0f);
+
+		_cardsRect = GetNode<TextureRect>("Background/CatRect/Cards");
+		_cardsRect.Position = Vector2.Zero;
+		_swayTime = 0.0f;
 
 		_settingsButton = GetNode<Button>("DifficultyButtons/SettingsButton");
 		foreach (Node child in GetNode("DifficultyButtons").GetChildren())
@@ -48,10 +54,21 @@ public partial class TitleScreen : Control
 
 	public override void _Process(double delta)
 	{
-		if (_catRect != null && _catRect.Position.Y > 0.0f)
+		if (_catRect != null)
 		{
-			float newY = Mathf.MoveToward(_catRect.Position.Y, 0.0f, CatRiseSpeed * (float)delta);
-			_catRect.Position = new Vector2(_catRect.Position.X, newY);
+			if (_catRect.Position.Y > 0.0f)
+			{
+				float newY = Mathf.MoveToward(_catRect.Position.Y, 0.0f, CatRiseSpeed * (float)delta);
+				_catRect.Position = new Vector2(_catRect.Position.X, newY);
+			}
+			else if (_cardsRect != null)
+			{
+				_swayTime += (float)delta;
+				_cardsRect.Position = new Vector2(
+					4f * Mathf.Sin(_swayTime * 1.32f),
+					8f * Mathf.Sin(_swayTime * 1.63f)
+				);
+			}
 		}
 	}
 
