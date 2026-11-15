@@ -56,6 +56,77 @@ public partial class TitleScreen : Control
 		float currentLinearVolume = Mathf.DbToLinear(AudioServer.GetBusVolumeDb(masterBusIndex));
 		_volumeSlider.SetValueNoSignal(currentLinearVolume);
 		BgmManager.Instance?.TitleBGM();
+		BuildOnlinePanel();
+	}
+
+	private Label _onlineStatus;
+	private LineEdit _addressField;
+
+	private void BuildOnlinePanel()
+	{
+		var panel = new PanelContainer
+		{
+			Position = new Vector2(640, 210),
+			CustomMinimumSize = new Vector2(440, 0)
+		};
+		panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+		{
+			BgColor = new Color(0.14f, 0.09f, 0.07f, 0.88f),
+			BorderColor = new Color(0.93f, 0.78f, 0.55f, 0.9f),
+			BorderWidthBottom = 3,
+			BorderWidthLeft = 3,
+			BorderWidthRight = 3,
+			BorderWidthTop = 3,
+			CornerRadiusBottomLeft = 14,
+			CornerRadiusBottomRight = 14,
+			CornerRadiusTopLeft = 14,
+			CornerRadiusTopRight = 14,
+			ContentMarginLeft = 18,
+			ContentMarginTop = 16,
+			ContentMarginRight = 18,
+			ContentMarginBottom = 16
+		});
+
+		var box = new VBoxContainer();
+		box.AddThemeConstantOverride("separation", 10);
+		panel.AddChild(box);
+
+		box.AddChild(new Label
+		{
+			Text = "온라인 대전",
+			HorizontalAlignment = HorizontalAlignment.Center
+		});
+
+		var hostButton = new Button { Text = "방 만들기", CustomMinimumSize = new Vector2(0, 44) };
+		hostButton.Pressed += () =>
+		{
+			SoundEffectManager.Instance?.PlayButtonClick();
+			NetPlay.Instance?.Host();
+		};
+		box.AddChild(hostButton);
+
+		_addressField = new LineEdit
+		{
+			PlaceholderText = "상대 IP",
+			CustomMinimumSize = new Vector2(0, 44)
+		};
+		box.AddChild(_addressField);
+
+		var joinButton = new Button { Text = "참가", CustomMinimumSize = new Vector2(0, 44) };
+		joinButton.Pressed += () =>
+		{
+			SoundEffectManager.Instance?.PlayButtonClick();
+			NetPlay.Instance?.Join(_addressField.Text);
+		};
+		box.AddChild(joinButton);
+
+		_onlineStatus = new Label
+		{
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			CustomMinimumSize = new Vector2(390, 96)
+		};
+		box.AddChild(_onlineStatus);
+		AddChild(panel);
 	}
 
 	public override void _Process(double delta)
@@ -73,6 +144,8 @@ public partial class TitleScreen : Control
 				8f * Mathf.Sin(_swayTime * 1.63f)
 			);
 		}
+		if (_onlineStatus != null && NetPlay.Instance != null)
+			_onlineStatus.Text = NetPlay.Instance.Status;
 	}
 
 	private void OnSettingsPopupHide()
@@ -94,6 +167,7 @@ public partial class TitleScreen : Control
 
 		SoundEffectManager.Instance?.PlayButtonClick();
 		SoundEffectManager.Instance?.PlayGameStart();
+		NetPlay.Instance?.Leave();
 		PackedScene gamePackedScene = GD.Load<PackedScene>("res://Scenes/Game/GameScene.tscn");
 		GameScene gameScene = gamePackedScene.Instantiate<GameScene>();
 		gameScene.Difficulty = (OpponentDifficulty)difficulty;

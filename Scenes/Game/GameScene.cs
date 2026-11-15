@@ -88,7 +88,10 @@ public partial class GameScene : Node2D
     private Card landedCard;
     private float landingGlow;
     private int animationSlot;
+    private int plannedInsert = -1;
     private float reachTime = -1, restTime;
+    private bool IsOnline => NetPlay.Instance != null && NetPlay.Instance.InMatch;
+    public bool MatchDecided => result != null;
 
     private static float Phase(float time, float start, float end) =>
         Mathf.SmoothStep(0, 1, Mathf.Clamp((time - start) / (end - start), 0, 1));
@@ -98,11 +101,20 @@ public partial class GameScene : Node2D
         if (countdown > 0 || (result != null && reachTime < 0)) return;
         if (reachTime < 0)
         {
-            restTime += dt;
-            if (restTime < OpponentAI.Delay(Difficulty)) return;
-            var choice = ai.Choose(Difficulty, rival.Select(c => c.Rank).ToArray(), mine.Count, rival.IndexOf(held));
+            Decision choice;
+            if (IsOnline)
+            {
+                if (!NetPlay.Instance.TryTakeAction(out choice) || !RemoteMoveValid(choice)) return;
+            }
+            else
+            {
+                restTime += dt;
+                if (restTime < OpponentAI.Delay(Difficulty)) return;
+                choice = ai.Choose(Difficulty, rival.Select(c => c.Rank).ToArray(), mine.Count, rival.IndexOf(held));
+                restTime = 0;
+            }
             landedCard = null;
-            restTime = 0;
+            plannedInsert = choice.Move == Move.Steal ? choice.To : -1;
             move = choice.Move;
             if (move == Move.Wait) return;
             if (move == Move.Inspect)
@@ -110,7 +122,8 @@ public partial class GameScene : Node2D
             if (move != Move.Inspect)
             {
                 targetCard = move == Move.Steal ? mine[choice.From] : rival[choice.From];
-                destinationCard = choice.To < 0 ? null : rival[choice.To];
+                destinationCard = move != Move.Steal && choice.To >= 0 && choice.To < rival.Count
+                    ? rival[choice.To] : null;
                 reachEnd = targetCard.Position + GripOffset(targetCard.Angle, move == Move.Steal ? PlayerScale : RivalScale);
             }
             reachTime = restTime = 0;
@@ -173,7 +186,10 @@ public partial class GameScene : Node2D
                 if (reachTime >= DepositTime)
                 {
                     // Draw independently of the paw animation, using the hand size at release.
-                    int finalSlot = rng.RandiRange(0, rival.Count);
+                    int finalSlot = plannedInsert >= 0
+                        ? Mathf.Clamp(plannedInsert, 0, rival.Count)
+                        : rng.RandiRange(0, rival.Count);
+                    plannedInsert = -1;
                     rival.Insert(finalSlot, carried);
                     int hidden = rival.IndexOf(held);
                     int visibleSlot = hidden >= 0 && hidden < finalSlot ? finalSlot - 1 : finalSlot;
@@ -424,20 +440,23 @@ public partial class GameScene : Node2D
         shownCountdown = -1;
         goTime = 0;
         ai = new OpponentAI();
-        var deck = new List<Card>(20);
-        for (int rank = 1; rank <= 10; rank++)
+        if (!TryApplyOnlineDeal())
         {
-            deck.Add(new Card(rank));
-            deck.Add(new Card(rank, true));
+            var deck = new List<Card>(20);
+            for (int rank = 1; rank <= 10; rank++)
+            {
+                deck.Add(new Card(rank));
+                deck.Add(new Card(rank, true));
+            }
+            for (int i = deck.Count - 1; i > 0; i--)
+            {
+                int j = rng.RandiRange(0, i);
+                (deck[i], deck[j]) = (deck[j], deck[i]);
+            }
+            mine.AddRange(deck.GetRange(0, 10));
+            rival.AddRange(deck.GetRange(10, 10));
+            rival.Insert(rng.RandiRange(0, rival.Count), new Card(0));
         }
-        for (int i = deck.Count - 1; i > 0; i--)
-        {
-            int j = rng.RandiRange(0, i);
-            (deck[i], deck[j]) = (deck[j], deck[i]);
-        }
-        mine.AddRange(deck.GetRange(0, 10));
-        rival.AddRange(deck.GetRange(10, 10));
-        rival.Insert(rng.RandiRange(0, rival.Count), new Card(0));
         dealDuration = (mine.Count + rival.Count - 1) * DealInterval + DealFlight;
         countdown = CountdownSeconds + dealDuration;
         Fit();
@@ -709,6 +728,7 @@ public partial class GameScene : Node2D
         {
             playerInspectUses--;
             inspecting = true;
+            NetPlay.Instance?.Send("I");
             SoundEffectManager.Instance?.PlayMagnifierStart();
             hoveredRival = null;
             QueueRedraw();
@@ -742,10 +762,12 @@ public partial class GameScene : Node2D
             {
                 if (pointer.DistanceSquaredTo(pressPoint) >= RivalDrawDistance * RivalDrawDistance)
                 {
+                    int stolen = rival.IndexOf(held);
                     rival.Remove(held);
                     int slot = rng.RandiRange(0, mine.Count);
                     ai.ObserveInsertion(slot, held.Rank == 0);
                     mine.Insert(slot, held);
+                    NetPlay.Instance?.Send($"S|{stolen}|{slot}");
                     SoundEffectManager.Instance?.PlayCard();
                     if (held.Rank == 0)
                         SoundEffectManager.Instance?.PlayJoker();
@@ -753,18 +775,22 @@ public partial class GameScene : Node2D
             }
             else if (pendingPair != null)
             {
+                NetPlay.Instance?.Send($"P|{mine.IndexOf(pendingPair)}|{mine.IndexOf(held)}");
                 Discard(pendingPair);
                 Discard(held);
                 playerInspectUses++;
             }
             else if (dragged)
             {
-                ai.ObserveReorder(mine.IndexOf(held), gap, Difficulty);
+                int from = mine.IndexOf(held);
+                int to = gap;
+                ai.ObserveReorder(from, to, Difficulty);
                 mine.Remove(held);
-                mine.Insert(gap, held);
+                mine.Insert(to, held);
                 held.Angle = SlotAngle(gap, mine.Count, false);
                 held.Position = Slot(gap, mine.Count, false);
                 lastDropPointer = pointer;
+                NetPlay.Instance?.Send($"R|{from}|{to}");
                 SoundEffectManager.Instance?.PlayCard();
             }
             held = pendingPair = null;
@@ -828,6 +854,43 @@ public partial class GameScene : Node2D
             if (dragged && distance > 0.95f || distance >= nearest) continue;
             nearest = distance;
             pendingPair = mine[index];
+        }
+    }
+
+    private bool TryApplyOnlineDeal()
+    {
+        if (!IsOnline || string.IsNullOrEmpty(NetPlay.Instance.Deal)) return false;
+        string[] hands = NetPlay.Instance.Deal.Split('|');
+        List<Card> host = DecodeHand(hands.ElementAtOrDefault(0));
+        List<Card> guest = DecodeHand(hands.ElementAtOrDefault(1));
+        mine.AddRange(NetPlay.Instance.IsHost ? host : guest);
+        rival.AddRange(NetPlay.Instance.IsHost ? guest : host);
+        return mine.Count > 0 && rival.Count > 0;
+    }
+
+    private static List<Card> DecodeHand(string hand)
+    {
+        var cards = new List<Card>();
+        if (string.IsNullOrEmpty(hand)) return cards;
+        foreach (string token in hand.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+            cards.Add(new Card(int.Parse(token[..^1]), token[^1] == 'b'));
+        return cards;
+    }
+
+    private bool RemoteMoveValid(Decision choice)
+    {
+        switch (choice.Move)
+        {
+            case Move.Inspect:
+                return true;
+            case Move.Steal:
+                return choice.From >= 0 && choice.From < mine.Count;
+            case Move.Pair:
+            case Move.Shuffle:
+                return choice.From >= 0 && choice.To >= 0 && choice.From != choice.To
+                    && choice.From < rival.Count && choice.To < rival.Count;
+            default:
+                return false;
         }
     }
 

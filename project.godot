@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 SoundEffectManager="*res://Scenes/Audio/sound_effect_manager.tscn"
 BgmManager="*res://Scenes/Audio/bgm_manager.tscn"
+NetPlay="*res://Scenes/Online/NetPlay.cs"
 
 [display]
 

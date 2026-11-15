@@ -17,6 +17,7 @@ public partial class ResultsScreen : Control
 
 	public override void _Ready()
 	{
+		NetPlay.Instance?.EndMatch();
 		SoundEffectManager.Instance?.PlayResultEnter();
 		_mainLayout = GetNode<Control>("MainLayout");
 		_centerImage = GetNode<TextureRect>("MainLayout/VBoxContainer/CenterContainer/CenterGroup/CenterImage");
