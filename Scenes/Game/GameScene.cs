@@ -286,6 +286,7 @@ public partial class GameScene : Node2D
         {
             Input.MouseMode = Input.MouseModeEnum.Visible;
             transitioning = true;
+            BgmManager.Instance?.StopBGM();
             if (result == "WIN")
                 SoundEffectManager.Instance?.PlayVictory();
             else
@@ -361,6 +362,7 @@ public partial class GameScene : Node2D
         retry.AddThemeFontOverride("font", GD.Load<Font>("res://Art/Fonts/Galmuri/Galmuri11-Bold.ttf"));
         retry.AddThemeFontSizeOverride("font_size", 24);
         retry.Pressed += StartRound;
+        BgmManager.Instance?.GameBGM();
         StartRound();
     }
 

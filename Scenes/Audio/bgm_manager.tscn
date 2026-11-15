@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bbgmmanager01"]
+
+[ext_resource type="Script" path="res://Scenes/Audio/BgmManager.cs" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://bvavkihruwmr7" path="res://Sound/Sketchbook 2024-01-24_02.ogg" id="2_title"]
+[ext_resource type="AudioStream" uid="uid://cfr3wfn88a12t" path="res://Sound/Week 15 - Sunburn SPF 3000.ogg" id="3_game"]
+
+[node name="BgmManager" type="Node"]
+script = ExtResource("1_script")
+TitleTrack = ExtResource("2_title")
+GameTrack = ExtResource("3_game")
