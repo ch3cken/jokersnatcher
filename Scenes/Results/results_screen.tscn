@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://d3dyoe87rb1no" path="res://Scenes/Results/ResultsScreen.cs" id="1_tva50"]
 [ext_resource type="Texture2D" uid="uid://deiyfl2ufmgjq" path="res://icon.svg" id="2_i4gu4"]
+[ext_resource type="Texture2D" uid="uid://d4h53ox1nvhmw" path="res://Art/Used/cutscene2.png" id="2_mea0t"]
+[ext_resource type="Texture2D" uid="uid://77oo5dv3xcn5" path="res://Art/Used/cutscene1.png" id="3_77ec0"]
 
 [node name="ResultsScreen" type="Control" unique_id=2007865140]
 layout_mode = 3
@@ -11,6 +13,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_tva50")
+WinImage = ExtResource("2_mea0t")
+LoseImage = ExtResource("3_77ec0")
 
 [node name="Background" type="ColorRect" parent="." unique_id=725316168]
 layout_mode = 1

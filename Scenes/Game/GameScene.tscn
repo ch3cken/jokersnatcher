@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://c4xuqehrmly7q" path="res://Scenes/Game/GameScene.cs" id="1"]
 [ext_resource type="Texture2D" uid="uid://bkapdr1sye6n6" path="res://Art/Used/glass_icon.png" id="20_l6isw"]
+[ext_resource type="Texture2D" uid="uid://ku82ctrr1r4a" path="res://Art/Used/cat/face_win.png" id="30_kt1g7"]
+[ext_resource type="Texture2D" uid="uid://bgxjh37e06lm5" path="res://Art/Used/cat/face_lose.png" id="31_o1mym"]
 [ext_resource type="Texture2D" uid="uid://dpt6vilm2h8rj" path="res://cards/CardBack.png" id="Back"]
 [ext_resource type="Texture2D" uid="uid://c8nkhagwxmxi8" path="res://Art/Used/background.png" id="BackgroundArt"]
 [ext_resource type="Texture2D" uid="uid://c0ew3ar26t1su" path="res://Art/Used/cat/cat.png" id="BodyArt"]
@@ -10,11 +12,6 @@
 [ext_resource type="Texture2D" uid="uid://dgn4y4fhpm181" path="res://Art/Used/ui/2.png" id="Count2"]
 [ext_resource type="Texture2D" uid="uid://gsv3h1fsuecm" path="res://Art/Used/ui/3.png" id="Count3"]
 [ext_resource type="Texture2D" uid="uid://ord7brjjxulm" path="res://Art/Used/cat/face.png" id="FaceArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/face_self.png" id="SelfFaceArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/face_stress.png" id="StressFaceArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/face_smile.svg" id="SmileFaceArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/face_grimace.svg" id="GrimaceFaceArt"]
-[ext_resource type="Texture2D" path="res://Art/Used/cat/face_self_stress.png" id="SelfStressFaceArt"]
 [ext_resource type="Texture2D" uid="uid://bkmcwuat2cbd2" path="res://Art/Used/glass.png" id="GlassArt"]
 [ext_resource type="Texture2D" uid="uid://dp18m4kd2pfj4" path="res://Art/Used/ui/go.png" id="GoArt"]
 [ext_resource type="Texture2D" uid="uid://chuk1kwkkvn6p" path="res://Art/Used/player/floating.png" id="HandArt"]
@@ -39,6 +36,8 @@
 [ext_resource type="Texture2D" uid="uid://q4gewuforj7e" path="res://Art/Used/shadow.png" id="PartyShadow"]
 [ext_resource type="Texture2D" uid="uid://iy241dqhrk8w" path="res://Art/Used/player/my hand.png" id="PlayerSupport"]
 [ext_resource type="Texture2D" uid="uid://ca8c0v71ohkde" path="res://Art/Used/cat/snatch hold.png" id="RivalPawArt"]
+[ext_resource type="Texture2D" uid="uid://e4kg44y2yxm1" path="res://Art/Used/cat/face_self.png" id="SelfFaceArt"]
+[ext_resource type="Texture2D" uid="uid://ecgnukq8vo5x" path="res://Art/Used/cat/face_self_stress.png" id="SelfStressFaceArt"]
 [ext_resource type="Texture2D" uid="uid://d144c0538tujy" path="res://Art/Used/cat/arm1.png" id="SleeveBase"]
 [ext_resource type="Texture2D" uid="uid://blungw3fp82n" path="res://cards/Spades1.png" id="Spades1"]
 [ext_resource type="Texture2D" uid="uid://uni572cdjyfl" path="res://cards/Spades2.png" id="Spades2"]
@@ -50,6 +49,7 @@
 [ext_resource type="Texture2D" uid="uid://cmu5eqda4ammk" path="res://cards/Spades8.png" id="Spades8"]
 [ext_resource type="Texture2D" uid="uid://emqwhq1dtenx" path="res://cards/Spades9.png" id="Spades9"]
 [ext_resource type="Texture2D" uid="uid://nk0qrrji4ok1" path="res://cards/Spades10.png" id="Spades10"]
+[ext_resource type="Texture2D" uid="uid://lybahvbwbmty" path="res://Art/Used/cat/face_stress.png" id="StressFaceArt"]
 [ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="SupportArt"]
 [ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="TableArt"]
 [ext_resource type="Texture2D" uid="uid://n2mumqwxnvvd" path="res://Art/Used/player/thumb.png" id="ThumbArt"]
@@ -104,8 +104,8 @@ LampArt = ExtResource("LampArt")
 FaceArt = ExtResource("FaceArt")
 SelfFaceArt = ExtResource("SelfFaceArt")
 StressFaceArt = ExtResource("StressFaceArt")
-SmileFaceArt = ExtResource("SmileFaceArt")
-GrimaceFaceArt = ExtResource("GrimaceFaceArt")
+SmileFaceArt = ExtResource("30_kt1g7")
+GrimaceFaceArt = ExtResource("31_o1mym")
 SelfStressFaceArt = ExtResource("SelfStressFaceArt")
 SleeveBase = ExtResource("SleeveBase")
 SupportArt = SubResource("crop_SupportArt")
@@ -120,6 +120,3 @@ Count1Art = ExtResource("Count1")
 GoArt = ExtResource("GoArt")
 WinArt = ExtResource("WinArt")
 LoseArt = ExtResource("LoseArt")
-PlayerHandOffsetX = -90.0
-PlayerCardOffsetX = -90.0
-PlayerFanRotationDegrees = 25.0
