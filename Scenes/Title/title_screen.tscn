@@ -26,9 +26,8 @@ Button/colors/font_color = Color(1, 0.915, 0.78, 1)
 Button/colors/font_focus_color = Color(1, 0.915, 0.78, 1)
 Button/colors/font_hover_color = Color(1, 0.95, 0.84, 1)
 Button/colors/font_hover_pressed_color = Color(1, 0.915, 0.78, 1)
-Button/colors/font_outline_color = Color(0.24, 0.15, 0.1, 1)
 Button/colors/font_pressed_color = Color(1, 0.915, 0.78, 1)
-Button/constants/outline_size = 3
+Button/constants/outline_size = 0
 Button/font_sizes/font_size = 36
 
 [sub_resource type="FontVariation" id="PixelifyDifficulty500"]
@@ -129,7 +128,7 @@ void vertex() {
     is_fill = step(0.9, COLOR.r);
 }
 void fragment() {
-    vec3 gradient = mix(apricot.rgb, orange.rgb, smoothstep(28.0, 84.0, title_y));
+    vec3 gradient = mix(apricot.rgb, orange.rgb, smoothstep(24.0, 176.0, title_y));
     COLOR.rgb *= mix(vec3(1.0), gradient, is_fill);
 }"
 
@@ -138,10 +137,10 @@ shader = SubResource("TitleGradientShader")
 shader_parameter/apricot = Color(1, 0.84, 0.53, 1)
 shader_parameter/orange = Color(0.93, 0.47, 0.19, 1)
 
-[sub_resource type="FontVariation" id="PixelifyTitle600"]
+[sub_resource type="FontVariation" id="PixelifyTitle700"]
 base_font = ExtResource("PixelifySans")
 variation_opentype = {
-2003265652: 600.0
+2003265652: 700.0
 }
 
 [sub_resource type="StyleBox" id="StyleBox_callout_popup"]
@@ -302,20 +301,24 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_focus")
 
 [node name="TitleLabel" type="Label" parent="." unique_id=885945664]
 material = SubResource("TitleGradient")
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
 offset_left = 48.0
-offset_top = 36.0
-offset_right = 1104.0
-offset_bottom = 146.0
+offset_top = -112.0
+offset_right = 536.0
+offset_bottom = 88.0
+grow_vertical = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0.24, 0.15, 0.1, 0.55)
-theme_override_colors/font_outline_color = Color(0.24, 0.15, 0.1, 1)
+theme_override_constants/line_spacing = -12
 theme_override_constants/shadow_offset_x = 2
-theme_override_constants/outline_size = 4
-theme_override_fonts/font = SubResource("PixelifyTitle600")
-theme_override_font_sizes/font_size = 80
-text = "Joker Snatcher"
-horizontal_alignment = 1
+theme_override_constants/outline_size = 0
+theme_override_fonts/font = SubResource("PixelifyTitle700")
+theme_override_font_sizes/font_size = 84
+text = "JOKER
+SNATCHER"
 vertical_alignment = 1
 
 [node name="SettingsPopup" type="PopupPanel" parent="." unique_id=890161988]
