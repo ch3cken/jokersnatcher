@@ -716,6 +716,8 @@ public partial class GameScene : Node2D
                     ai.ObserveInsertion(slot, held.Rank == 0);
                     mine.Insert(slot, held);
                     SoundEffectManager.Instance?.PlayCard();
+                    if (held.Rank == 0)
+                        SoundEffectManager.Instance?.PlayJoker();
                 }
             }
             else if (pendingPair != null)

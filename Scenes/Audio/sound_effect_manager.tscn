@@ -19,7 +19,8 @@
 [ext_resource type="AudioStream" uid="uid://d0keexi42oa61" path="res://Sound/card4.wav" id="17_card4"]
 [ext_resource type="AudioStream" uid="uid://cnld2smoms8nh" path="res://Sound/deal.wav" id="18_deal"]
 [ext_resource type="AudioStream" uid="uid://md8km30l21s7" path="res://Sound/Sell.wav" id="19_sell"]
+[ext_resource type="AudioStream" uid="uid://5qa0g456ll40" path="res://Sound/itsthejoker.ogg" id="20_joker"]
 
 [node name="SoundEffectManager" type="Node"]
 script = ExtResource("1_script")
-SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2"), ExtResource("4_hover"), ExtResource("5_click"), ExtResource("6_start"), ExtResource("7_countdown"), ExtResource("8_defeat"), ExtResource("9_victory"), ExtResource("10_result"), ExtResource("11_mag_start"), ExtResource("12_mag_end"), ExtResource("13_enemy_mag"), ExtResource("11_mag_start"), ExtResource("14_card1"), ExtResource("15_card2"), ExtResource("16_card3"), ExtResource("17_card4"), ExtResource("18_deal"), ExtResource("19_sell")])
+SoundEffects = Array[AudioStream]([ExtResource("2_takecard1"), ExtResource("3_takecard2"), ExtResource("4_hover"), ExtResource("5_click"), ExtResource("6_start"), ExtResource("7_countdown"), ExtResource("8_defeat"), ExtResource("9_victory"), ExtResource("10_result"), ExtResource("11_mag_start"), ExtResource("12_mag_end"), ExtResource("13_enemy_mag"), ExtResource("11_mag_start"), ExtResource("14_card1"), ExtResource("15_card2"), ExtResource("16_card3"), ExtResource("17_card4"), ExtResource("18_deal"), ExtResource("19_sell"), ExtResource("20_joker")])

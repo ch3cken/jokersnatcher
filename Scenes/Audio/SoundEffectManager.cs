@@ -48,6 +48,7 @@ public partial class SoundEffectManager : Node
 
 	public void PlayTakeCard() => PlaySound((int)Effect.TakeCard);
 	public void PlayCard() => PlaySound(_rng.RandiRange((int)Effect.Card1, (int)Effect.Card4));
+	public void PlayJoker() => PlaySound((int)Effect.ItsTheJoker);
 	public void PlayDeal() => PlaySound((int)Effect.Deal);
 	public void PlayButtonHover() => PlaySound((int)Effect.ButtonHover);
 	public void PlayButtonClick() => PlaySound((int)Effect.ButtonClick);
@@ -87,5 +88,6 @@ public partial class SoundEffectManager : Node
 		Card4,
 		Deal,
 		Sell,
+		ItsTheJoker,
 	}
 }
