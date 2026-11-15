@@ -10,6 +10,7 @@ public partial class SoundEffectManager : Node
 	private readonly AudioStreamPlayer[] _players = new AudioStreamPlayer[PlayerPoolSize];
 	private int _nextPlayerIndex = 0;
 	private readonly RandomNumberGenerator _rng = new();
+	private bool _closing;
 
 	public override void _EnterTree()
 	{
@@ -18,6 +19,7 @@ public partial class SoundEffectManager : Node
 
 	public override void _Ready()
 	{
+		GetTree().AutoAcceptQuit = false;
 		_rng.Randomize();
 		for (int i = 0; i < PlayerPoolSize; i++)
 		{
@@ -28,7 +30,7 @@ public partial class SoundEffectManager : Node
 
 	public void PlaySound(int index)
 	{
-		if (SoundEffects == null || index < 0 || index >= SoundEffects.Length)
+		if (_closing || SoundEffects == null || index < 0 || index >= SoundEffects.Length)
 		{
 			return;
 		}
@@ -44,6 +46,33 @@ public partial class SoundEffectManager : Node
 		player.Stream = stream;
 		player.PitchScale = _rng.RandfRange(0.9f, 1.1f);
 		player.Play();
+	}
+
+	public override async void _Notification(int what)
+	{
+		if (what != NotificationWMCloseRequest || _closing || !IsInsideTree()) return;
+		_closing = true;
+		var tree = GetTree();
+		StopSounds();
+		// The mixer releases stopped playbacks asynchronously, across engine frames.
+		await ToSignal(tree.CreateTimer(0.2, ignoreTimeScale: true), SceneTreeTimer.SignalName.Timeout);
+		if (IsInsideTree()) tree.Quit();
+	}
+
+	private void StopSounds()
+	{
+		foreach (var player in _players)
+		{
+			if (player == null) continue;
+			player.Stop();
+			player.Stream = null;
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (Instance == this) Instance = null;
+		StopSounds();
 	}
 
 	public void PlayTakeCard() => PlaySound((int)Effect.TakeCard);
