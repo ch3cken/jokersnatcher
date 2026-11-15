@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://dki3rn16i3u1o" path="res://Art/Used/buttons/hard pressed.png" id="17_hard_pressed"]
 [ext_resource type="Texture2D" uid="uid://bs47fhcgm4d42" path="res://Art/Used/buttons/setting.png" id="18_setting"]
 [ext_resource type="Texture2D" uid="uid://tiuy7k1geofi" path="res://Art/Used/buttons/setting pressed.png" id="19_setting_pressed"]
+[ext_resource type="Texture2D" uid="uid://dv7oww3j6rpnf" path="res://Art/Used/tutorial.png" id="20_tutorial"]
 [ext_resource type="FontFile" uid="uid://cxuwgkxe1rb4t" path="res://Art/Fonts/PixelifySans/PixelifySans.ttf" id="PixelifySans"]
 
 [sub_resource type="Theme" id="Theme_difficulty_buttons"]
@@ -323,14 +324,14 @@ vertical_alignment = 1
 
 [node name="SettingsPopup" type="PopupPanel" parent="." unique_id=890161988]
 oversampling_override = 1.0
-size = Vector2i(240, 190)
+size = Vector2i(240, 246)
 theme_override_styles/panel = SubResource("StyleBox_callout_popup")
 
 [node name="MarginContainer" type="MarginContainer" parent="SettingsPopup" unique_id=1444446989]
 offset_left = 2.0
 offset_top = 2.0
 offset_right = 238.0
-offset_bottom = 174.0
+offset_bottom = 230.0
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 20
@@ -358,9 +359,41 @@ max_value = 1.0
 step = 0.01
 value = 1.0
 
+[node name="TutorialButton" type="Button" parent="SettingsPopup/MarginContainer/VBoxContainer" unique_id=1648291045]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Tutorial"
+
+[node name="TutorialPopup" type="Control" parent="." unique_id=1749203816]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TutorialImage" type="TextureRect" parent="TutorialPopup" unique_id=1839204917]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 76.0
+offset_top = 44.0
+offset_right = -76.0
+offset_bottom = -44.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("20_tutorial")
+expand_mode = 1
+stretch_mode = 5
+
 [connection signal="pressed" from="DifficultyButtons/EasyButton" to="." method="OnPlayButtonPressed" binds= [0]]
 [connection signal="pressed" from="DifficultyButtons/NormalButton" to="." method="OnPlayButtonPressed" binds= [1]]
 [connection signal="pressed" from="DifficultyButtons/HardButton" to="." method="OnPlayButtonPressed" binds= [2]]
 [connection signal="pressed" from="DifficultyButtons/SettingsButton" to="." method="OnSettingsButtonPressed"]
 [connection signal="toggled" from="SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox" to="." method="OnFullscreenCheckBoxToggled"]
 [connection signal="value_changed" from="SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider" to="." method="OnVolumeSliderValueChanged"]
+[connection signal="pressed" from="SettingsPopup/MarginContainer/VBoxContainer/TutorialButton" to="." method="OnTutorialButtonPressed"]
+[connection signal="gui_input" from="TutorialPopup" to="." method="OnTutorialPopupGuiInput"]

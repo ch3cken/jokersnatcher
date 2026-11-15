@@ -10,6 +10,7 @@ public partial class TitleScreen : Control
 	private float _swayTime = 0.0f;
 	private Button _settingsButton;
 	private PopupPanel _settingsPopup;
+	private Control _tutorialPopup;
 	private CheckBox _fullscreenCheckBox;
 	private HSlider _volumeSlider;
 
@@ -31,14 +32,18 @@ public partial class TitleScreen : Control
 				button.MouseEntered += OnButtonHovered;
 		}
 		_settingsPopup = GetNode<PopupPanel>("SettingsPopup");
+		_tutorialPopup = GetNode<Control>("TutorialPopup");
 		_fullscreenCheckBox = GetNode<CheckBox>("SettingsPopup/MarginContainer/VBoxContainer/FullscreenCheckBox");
 		_volumeSlider = GetNode<HSlider>("SettingsPopup/MarginContainer/VBoxContainer/VolumeSlider");
+		Button tutorialButton = GetNode<Button>("SettingsPopup/MarginContainer/VBoxContainer/TutorialButton");
+		tutorialButton.MouseEntered += OnButtonHovered;
 
 		// Track when PopupPanel hides so clicking SettingsButton to close it doesn't immediately reopen it
 		_settingsPopup.PopupHide += OnSettingsPopupHide;
 
-		// Ensure the pop-up starts hidden
+		// Ensure the pop-ups start hidden
 		_settingsPopup.Hide();
+		_tutorialPopup.Hide();
 
 		// Sync the checkbox with the current window mode without firing the Toggled signal
 		DisplayServer.WindowMode currentMode = DisplayServer.WindowGetMode();
@@ -54,21 +59,18 @@ public partial class TitleScreen : Control
 
 	public override void _Process(double delta)
 	{
-		if (_catRect != null)
+		if (_catRect.Position.Y > 0.0f)
 		{
-			if (_catRect.Position.Y > 0.0f)
-			{
-				float newY = Mathf.MoveToward(_catRect.Position.Y, 0.0f, CatRiseSpeed * (float)delta);
-				_catRect.Position = new Vector2(_catRect.Position.X, newY);
-			}
-			else if (_cardsRect != null)
-			{
-				_swayTime += (float)delta;
-				_cardsRect.Position = new Vector2(
-					4f * Mathf.Sin(_swayTime * 1.32f),
-					8f * Mathf.Sin(_swayTime * 1.63f)
-				);
-			}
+			float newY = Mathf.MoveToward(_catRect.Position.Y, 0.0f, CatRiseSpeed * (float)delta);
+			_catRect.Position = new Vector2(_catRect.Position.X, newY);
+		}
+		else
+		{
+			_swayTime += (float)delta;
+			_cardsRect.Position = new Vector2(
+				4f * Mathf.Sin(_swayTime * 1.32f),
+				8f * Mathf.Sin(_swayTime * 1.63f)
+			);
 		}
 	}
 
@@ -84,6 +86,11 @@ public partial class TitleScreen : Control
 
 	public void OnPlayButtonPressed(int difficulty)
 	{
+		if (_tutorialPopup.Visible)
+		{
+			return;
+		}
+
 		SoundEffectManager.Instance?.PlayButtonClick();
 		SoundEffectManager.Instance?.PlayGameStart();
 		PackedScene gamePackedScene = GD.Load<PackedScene>("res://Scenes/Game/GameScene.tscn");
@@ -99,6 +106,11 @@ public partial class TitleScreen : Control
 
 	public void OnSettingsButtonPressed()
 	{
+		if (_tutorialPopup.Visible)
+		{
+			return;
+		}
+
 		SoundEffectManager.Instance?.PlayButtonClick();
 		if (_settingsPopup.Visible)
 		{
@@ -121,6 +133,24 @@ public partial class TitleScreen : Control
 		int y = Mathf.RoundToInt(buttonRect.Position.Y - popupSize.Y - 6);
 
 		_settingsPopup.Popup(new Rect2I(x, y, popupSize.X, popupSize.Y));
+	}
+
+	public void OnTutorialButtonPressed()
+	{
+		SoundEffectManager.Instance?.PlayButtonClick();
+		_settingsPopup.Hide();
+		_tutorialPopup.Show();
+	}
+
+	public void OnTutorialPopupGuiInput(InputEvent @event)
+	{
+		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
+		{
+			SoundEffectManager.Instance?.PlayButtonClick();
+			_tutorialPopup.Hide();
+			_settingsPopup.Hide();
+			GetViewport().SetInputAsHandled();
+		}
 	}
 
 	public void OnFullscreenCheckBoxToggled(bool toggledOn)
