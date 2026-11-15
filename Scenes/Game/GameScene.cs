@@ -506,12 +506,13 @@ public partial class GameScene : Node2D
     }
 
     private const float PlayerFanRadius = 298, RivalFanRadius = 251;
+    private const float PlayerHandScale = 0.94f;
     private const float RivalFanCenterX = 612;
     private const float MaxPlayerGapSpread = 27f;
     private const float HeldLift = HoverLift + 24f;
 
     [Export] public float PlayerHandOffsetX { get; set; } = 0f;
-    [Export] public float PlayerHandOffsetY { get; set; } = 0f;
+    [Export] public float PlayerHandOffsetY { get; set; } = 6f;
     [Export] public float PlayerCardOffsetX { get; set; } = 16f;
     [Export] public float PlayerCardOffsetY { get; set; } = 0f;
     [Export(PropertyHint.Range, "-90,90,0.5")]
@@ -930,10 +931,12 @@ public partial class GameScene : Node2D
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
-        Vector2 playerHandTransform = playerSway + new Vector2(PlayerHandOffsetX, PlayerHandOffsetY);
+        Vector2 gripCenter = new(240, 512);
+        Vector2 playerHandTransform = playerSway + new Vector2(PlayerHandOffsetX + 9, PlayerHandOffsetY)
+            + gripCenter * (1 - PlayerHandScale);
         if (PlayerSupport != null)
         {
-            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawSetTransform(playerHandTransform, 0, Vector2.One * PlayerHandScale);
             DrawTextureRect(PlayerSupport, new Rect2(99, 421, 285, 264), false);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
@@ -952,7 +955,7 @@ public partial class GameScene : Node2D
         if (heldInFront) Paint(held, true);
         if (ThumbArt != null)
         {
-            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawSetTransform(playerHandTransform, 0, Vector2.One * PlayerHandScale);
             DrawTextureRect(ThumbArt, new Rect2(160, 459, 160, 106), false);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         }
@@ -963,7 +966,7 @@ public partial class GameScene : Node2D
         var hand = held == null ? HandArt : ClosedHandArt;
         if (hand != null && result == null)
         {
-            Vector2 handSize = new Vector2(277, 217) * (ForegroundScale(pointer.Y) / ForegroundScale(505));
+            Vector2 handSize = new Vector2(277, 217) * PlayerHandScale * (ForegroundScale(pointer.Y) / ForegroundScale(505));
             // Fingertip on the leading (upper-left) digit, in cropped sprite pixels.
             Vector2 fingertip = held == null ? new Vector2(23, 2) : new Vector2(16, 4);
             Vector2 hotspot = (fingertip + new Vector2(0.5f, 0.5f)) * handSize / hand.GetSize();
