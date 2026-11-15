@@ -335,7 +335,7 @@ public partial class GameScene : Node2D
     private float countdown = 3;
     private float goTime;
     private int shownCountdown = -1;
-    private const float CountdownSeconds = 3f, DealInterval = 0.045f, DealFlight = 0.36f;
+    private const float CountdownSeconds = 3f, DealInterval = 0.03f, DealFlight = 0.26f;
     private float dealDuration;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
@@ -506,6 +506,7 @@ public partial class GameScene : Node2D
     }
 
     private const float PlayerFanRadius = 298, RivalFanRadius = 251;
+    private const float PlayerHandOffsetY = 8f;
     private const float RivalFanCenterX = 612;
     private const float MaxPlayerGapSpread = 27f;
     private const float HeldLift = HoverLift + 24f;
@@ -545,7 +546,7 @@ public partial class GameScene : Node2D
             float extent = Mathf.Max(CornerExtent(openAngle, 0), CornerExtent(outer, HeldLift));
             centerX = Mathf.Max(206, extent + 16); // Includes the hand sway and selection outline.
         }
-        return new(centerX, (upper ? 287 : 386) + radius);
+        return new(centerX, (upper ? 287 : 386 + PlayerHandOffsetY) + radius);
     }
 
     // The dragged rival card still belongs to the list but occupies no visible slot.
@@ -927,7 +928,7 @@ public partial class GameScene : Node2D
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
         if (heldInFront) Paint(held, true);
-        DrawSetTransform(playerSway + new Vector2(8, 0), 0, Vector2.One);
+        DrawSetTransform(playerSway + new Vector2(8, PlayerHandOffsetY), 0, Vector2.One);
         if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
         if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
