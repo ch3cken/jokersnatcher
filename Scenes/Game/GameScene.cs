@@ -909,6 +909,13 @@ public partial class GameScene : Node2D
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
+        Vector2 playerHandTransform = playerSway + new Vector2(PlayerHandOffsetX, PlayerHandOffsetY);
+        if (PlayerSupport != null)
+        {
+            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawTextureRect(PlayerSupport, new Rect2(99, 421, 285, 264), false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         if (held != null && !heldInFront) Paint(held, fromRival);
         foreach (var card in mine) if (card != held) Paint(card, false, playerSway);
         foreach (var card in discarding) Paint(card, false);
@@ -922,10 +929,12 @@ public partial class GameScene : Node2D
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
         if (heldInFront) Paint(held, true);
-        DrawSetTransform(playerSway + new Vector2(PlayerHandOffsetX, PlayerHandOffsetY), 0, Vector2.One);
-        if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
-        if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        if (ThumbArt != null)
+        {
+            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawTextureRect(ThumbArt, new Rect2(160, 459, 160, 106), false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         overLensCards = false;
         float lensOpacity = Mathf.SmoothStep(0, 1, Mathf.Clamp((inspectProgress - 0.2f) / 0.8f, 0, 1));
         if (lensOpacity > 0) DrawMagnifier(lensOpacity);
