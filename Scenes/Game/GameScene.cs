@@ -449,10 +449,11 @@ public partial class GameScene : Node2D
     {
         Vector2 view = GetViewportRect().Size;
         Vector2 titleSize = new(1152, 648);
-        Vector2 frame = titleSize * Mathf.Min(view.X / titleSize.X, view.Y / titleSize.Y);
-        // Map the entire playable table, including input coordinates, into the title's 16:9 frame.
-        Scale = frame / new Vector2(960, 600);
-        Position = (view - frame) / 2;
+        float windowScale = Mathf.Min(view.X / titleSize.X, view.Y / titleSize.Y);
+        // Match TitleScreen's Keep Aspect Covered (360x220 -> 1152x704 centered in 1152x648).
+        Vector2 cover = new Vector2(titleSize.X, titleSize.X * 220f / 360f) * windowScale;
+        Scale = cover / new Vector2(960, 600);
+        Position = (view - cover) / 2;
     }
 
     public override void _ExitTree()

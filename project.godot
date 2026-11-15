@@ -23,7 +23,7 @@ BgmManager="*res://Scenes/Audio/bgm_manager.tscn"
 [display]
 
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="keep"
 
 [dotnet]
 
