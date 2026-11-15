@@ -41,6 +41,13 @@ public partial class SoundEffectManager : Node
 			return;
 		}
 
+		// A scene can request a sound and close in the same frame (e.g. the opening deal).
+		Callable.From(() => StartSound(stream)).CallDeferred();
+	}
+
+	private void StartSound(AudioStream stream)
+	{
+		if (_closing || !IsInsideTree()) return;
 		AudioStreamPlayer player = _players[_nextPlayerIndex];
 		_nextPlayerIndex = (_nextPlayerIndex + 1) % PlayerPoolSize;
 		player.Stream = stream;

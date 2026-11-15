@@ -64,10 +64,7 @@ public partial class GameScene : Node2D
     private static readonly Vector2 InspectBadgeCenter = new(867, 466);
     private const float InspectBadgeWidth = 94f;
     private const int InspectBadgeFontSize = 36;
-    private static readonly SystemFont ComicSansFont = new()
-    {
-        FontNames = new[] { "Comic Sans MS", "Comic Sans" }
-    };
+    private Font uiFont;
     private Vector2 pressPoint;
     private float grabAngleOffset;
     private Vector2? lastDropPointer;
@@ -353,7 +350,9 @@ public partial class GameScene : Node2D
         TintFaces(SecondFaces, new Color("#ac6257"));
         if (Back != null) Back = WarmCardBack(Back);
         AddChild(retry);
-        retry.AddThemeFontSizeOverride("font_size", 22);
+        uiFont = GD.Load<Font>("res://Art/Fonts/Galmuri/Galmuri11.ttf");
+        retry.AddThemeFontOverride("font", GD.Load<Font>("res://Art/Fonts/Galmuri/Galmuri11-Bold.ttf"));
+        retry.AddThemeFontSizeOverride("font_size", 24);
         retry.Pressed += StartRound;
         StartRound();
     }
@@ -500,6 +499,11 @@ public partial class GameScene : Node2D
 
     private const float PlayerFanRadius = 298, RivalFanRadius = 251;
     private const float RivalFanCenterX = 612;
+    private const float MaxPlayerGapSpread = 27f;
+    private const float HeldLift = HoverLift + 24f;
+
+    private static float SpreadScale(int slots) =>
+        1f + 0.65f * Mathf.Clamp((slots - 5) / 5f, 0f, 1f);
 
     private static float FanStep(int total, bool upper)
     {
@@ -525,11 +529,13 @@ public partial class GameScene : Node2D
         float centerX = RivalFanCenterX;
         if (!upper)
         {
-            // Leave room for the tilted outer card and its top-left rank.
+            // Frame the widest interaction pose, so opening a gap never pans the hand.
             float outer = Mathf.Abs(SlotAngle(0, total, false));
-            float leftExtent = (radius + 60 * PlayerScale) * Mathf.Sin(outer)
-                + 38 * PlayerScale * Mathf.Cos(outer);
-            centerX = Mathf.Max(206, leftExtent + 8);
+            float openAngle = outer + MaxPlayerGapSpread * SpreadScale(total) / radius;
+            float CornerExtent(float angle, float lift) =>
+                (radius + lift + 60 * PlayerScale) * Mathf.Sin(angle) + 38 * PlayerScale * Mathf.Cos(angle);
+            float extent = Mathf.Max(CornerExtent(openAngle, 0), CornerExtent(outer, HeldLift));
+            centerX = Mathf.Max(206, extent + 16); // Includes the hand sway and selection outline.
         }
         return new(centerX, (upper ? 287 : 386) + radius);
     }
@@ -566,7 +572,7 @@ public partial class GameScene : Node2D
             bool opening = receiving || shuffling || (!upper && held != null && !fromRival);
             int openAt = receiving ? RivalGapIndex : shuffling ? RivalShuffleIndex() : gap;
             int slots = count + (opening && !shuffling ? 1 : 0);
-            float spreadScale = 1f + 0.65f * Mathf.Clamp((slots - 5) / 5f, 0f, 1f);
+            float spreadScale = SpreadScale(slots);
             int landing = receiving || shuffling ? openAt : -1;
             if (upper && landing < 0 && landingGlow > 0 && landedCard != null && landedCard != held)
             {
@@ -595,7 +601,7 @@ public partial class GameScene : Node2D
                 if (!upper && opening && dragged)
                 {
                     int distance = i - openAt;
-                    float spread = Mathf.Max(0, 36 - 9 * Mathf.Abs(distance));
+                    float spread = Mathf.Max(0, MaxPlayerGapSpread - 9 * (Mathf.Abs(distance) - 1));
                     angle += Mathf.Sign(distance) * spread * spreadScale / PlayerFanRadius;
                 }
                 else if (landing >= 0)
@@ -775,7 +781,7 @@ public partial class GameScene : Node2D
         }
         float angle = Mathf.Clamp(Vector2.Up.AngleTo(pointer - center) + grabAngleOffset, -outer, outer);
         held.Angle = angle;
-        held.Position = center + Vector2.Up.Rotated(angle) * (radius + HoverLift + 24);
+        held.Position = center + Vector2.Up.Rotated(angle) * (radius + HeldLift);
         if (fromRival) return;
 
         int source = mine.IndexOf(held);
@@ -955,7 +961,7 @@ public partial class GameScene : Node2D
     private void DrawInspectUsesCount()
     {
         DrawString(
-            ComicSansFont,
+            uiFont,
             new Vector2(InspectBadgeCenter.X - InspectBadgeWidth * 0.5f, InspectBadgeCenter.Y + InspectBadgeFontSize * 0.36f),
             playerInspectUses.ToString(),
             HorizontalAlignment.Center,
@@ -1003,7 +1009,7 @@ public partial class GameScene : Node2D
             if (art != null)
                 DrawTextureRect(art, bounds, false, new Color(1, 1, 1, 0.74f * fade));
             else
-                DrawString(ThemeDB.FallbackFont, new(-38, 9), card.Rank == 0 ? "JOKER" : card.Rank.ToString(),
+                DrawString(uiFont, new(-38, 9), card.Rank == 0 ? "JOKER" : card.Rank.ToString(),
                     HorizontalAlignment.Center, 76, card.Rank == 0 ? 20 : 30, new Color(Ink.R, Ink.G, Ink.B, fade));
             DrawRect(bounds, card.Rank == 0
                 ? new Color(Gold.R, Gold.G, Gold.B, fade)
@@ -1043,8 +1049,8 @@ public partial class GameScene : Node2D
         {
             string label = card.Rank == 0 ? "J" : card.Rank.ToString();
             Color ink = new(Ink.R, Ink.G, Ink.B, alpha);
-            DrawString(ThemeDB.FallbackFont,new(-32,-39),label,fontSize:16,modulate:ink);
-            DrawString(ThemeDB.FallbackFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,ink);
+            DrawString(uiFont,new(-32,-39),label,fontSize:16,modulate:ink);
+            DrawString(uiFont,new(-38,10),card.Rank == 0 ? "JOKER" : label,HorizontalAlignment.Center,76,card.Rank == 0 ? 20 : 32,ink);
         }
         if (hidden && card == landedCard && landingGlow > 0)
         {
