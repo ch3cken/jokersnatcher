@@ -120,3 +120,6 @@ Count1Art = ExtResource("Count1")
 GoArt = ExtResource("GoArt")
 WinArt = ExtResource("WinArt")
 LoseArt = ExtResource("LoseArt")
+PlayerHandOffsetX = -90.0
+PlayerCardOffsetX = -90.0
+PlayerFanRotationDegrees = 25.0
