@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220">
+  <g fill="none" stroke="#c28355" stroke-width="2" shape-rendering="crispEdges">
+    <path d="M155 50h4v2h4v2h4v2h4 M197 50h-4v2h-4v2h-4v2h-4"/>
+    <path d="M156 58h3v2h4v2h5v2h-5v2h-4v2h-3 M196 58h-3v2h-4v2h-5v2h5v2h4v2h3"/>
+    <path d="M167 85v-2h2v-2h3v-2h7v2h3v2h2v2"/>
+  </g>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220" viewBox="0 0 360 220">
+  <g fill="#c28355" shape-rendering="crispEdges">
+    <!-- Closed eyes curve upward on the same pixel grid as the other faces. -->
+    <path d="M155 64h2v-3h2v-2h2v-2h5v2h2v2h2v3h-2v-2h-2v-2h-5v2h-2v2h-2v2h-2z"/>
+    <path d="M182 64h2v-3h2v-2h2v-2h5v2h2v2h2v4h-2v-2h-2v-3h-5v2h-2v2h-2v2h-2z"/>
+    <path d="M167 78h2v2h2v1h3v-1h3v1h3v-1h2v-3h2v4h-2v2h-2v2h-2v1h-5v-1h-2v-2h-2v-2h-2z"/>
+  </g>
+</svg>

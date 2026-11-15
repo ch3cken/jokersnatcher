@@ -22,6 +22,11 @@ public partial class GameScene : Node2D
     [Export] public Texture2D PartyShadow { get; set; }
     [Export] public Texture2D LampArt { get; set; }
     [Export] public Texture2D FaceArt { get; set; }
+    [Export] public Texture2D SelfFaceArt { get; set; }
+    [Export] public Texture2D StressFaceArt { get; set; }
+    [Export] public Texture2D SmileFaceArt { get; set; }
+    [Export] public Texture2D GrimaceFaceArt { get; set; }
+    [Export] public Texture2D SelfStressFaceArt { get; set; }
     [Export] public Texture2D SleeveBase { get; set; }
     [Export] public Texture2D SupportArt { get; set; }
     [Export] public Texture2D ClosedHandArt { get; set; }
@@ -330,6 +335,8 @@ public partial class GameScene : Node2D
     private float countdown = 3;
     private float goTime;
     private int shownCountdown = -1;
+    private const float CountdownSeconds = 3f, DealInterval = 0.045f, DealFlight = 0.36f;
+    private float dealDuration;
     private string result;
     private static readonly Color Ink = new("#242238"), Paper = new("#fff0cf"), Gold = new("#ffcd70");
 
@@ -412,7 +419,6 @@ public partial class GameScene : Node2D
         restTime = 0;
         paw = ArmRest;
         result = null;
-        countdown = 3;
         shownCountdown = -1;
         goTime = 0;
         ai = new OpponentAI();
@@ -430,6 +436,8 @@ public partial class GameScene : Node2D
         mine.AddRange(deck.GetRange(0, 10));
         rival.AddRange(deck.GetRange(10, 10));
         rival.Insert(rng.RandiRange(0, rival.Count), new Card(0));
+        dealDuration = (mine.Count + rival.Count - 1) * DealInterval + DealFlight;
+        countdown = CountdownSeconds + dealDuration;
         Fit();
         Layout(1);
         SoundEffectManager.Instance?.PlayDeal();
@@ -464,7 +472,7 @@ public partial class GameScene : Node2D
         landingGlow = Mathf.MoveToward(landingGlow, 0, (float)delta / 0.45f);
         bool counting = countdown > 0;
         countdown = Mathf.Max(0, countdown - (float)delta);
-        if (countdown > 0)
+        if (countdown > 0 && countdown <= CountdownSeconds)
         {
             int tick = Mathf.CeilToInt(countdown);
             if (tick != shownCountdown)
@@ -473,7 +481,7 @@ public partial class GameScene : Node2D
                 SoundEffectManager.Instance?.PlayCountdown();
             }
         }
-        else if (counting)
+        else if (counting && countdown == 0)
         {
             shownCountdown = 0;
             goTime = 1f;
@@ -855,7 +863,7 @@ public partial class GameScene : Node2D
         Layer(PartyShadow);
         Layer(PartyArt);
         Layer(LampArt);
-        bool checking = move == Move.Inspect && reachTime >= 0 && RivalGlassArt != null;
+        bool checking = result == null && move == Move.Inspect && reachTime >= 0 && RivalGlassArt != null;
         if (checking)
         {
             DrawSetTransform(new Vector2(0, RivalInspectBounce), 0, Vector2.One);
@@ -865,7 +873,20 @@ public partial class GameScene : Node2D
         else
         {
             Layer(BodyArt);
-            Layer(FaceArt);
+            bool lookingAtHand = reachTime >= 0 && (move is Move.Pair or Move.Shuffle
+                ? targetCard != null && targetCard != held && rival.Contains(targetCard)
+                : move == Move.Steal && carried != null && reachTime >= ReturnStart);
+            const int lowHandSize = 3;
+            bool stressed = rival.Count + (carried == null ? 0 : 1) <= lowHandSize
+                || mine.Exists(static card => card.Rank == 0);
+            Texture2D face = result switch
+            {
+                "LOSE" => SmileFaceArt,
+                "WIN" => GrimaceFaceArt,
+                _ when stressed => lookingAtHand ? SelfStressFaceArt : StressFaceArt,
+                _ => lookingAtHand ? SelfFaceArt : FaceArt
+            };
+            Layer(face ?? FaceArt);
             Layer(SleeveBase);
         }
         Layer(TableArt);
@@ -886,7 +907,7 @@ public partial class GameScene : Node2D
         if (!checking) DrawReachingArm();
         Card lifted = move is Move.Pair or Move.Shuffle && reachTime >= 0.32f ? targetCard : null;
         bool heldInFront = held != null && fromRival && RivalDrawProgress < 0.5f;
-        foreach (var card in rival) if (card != held && card != lifted) Paint(card, true, rivalSway);
+        DrawFan(rival, true, rivalSway, lifted);
         DrawSetTransform(rivalSway, 0, Vector2.One);
         if (SupportArt != null) DrawTextureRect(SupportArt, new Rect2(533,314,117,104), false);
         if (reachTime < 0 && PalmArt != null)
@@ -894,7 +915,7 @@ public partial class GameScene : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
         if (held != null && !heldInFront) Paint(held, fromRival);
-        foreach (var card in mine) if (card != held) Paint(card, false, playerSway);
+        DrawFan(mine, false, playerSway);
         foreach (var card in discarding) Paint(card, false);
         if (carried != null) Paint(carried, false);
         if (!checking && reachTime >= 0 && RivalPawArt != null)
@@ -906,7 +927,7 @@ public partial class GameScene : Node2D
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
         if (heldInFront) Paint(held, true);
-        DrawSetTransform(playerSway, 0, Vector2.One);
+        DrawSetTransform(playerSway + new Vector2(8, 0), 0, Vector2.One);
         if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
         if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
@@ -935,7 +956,7 @@ public partial class GameScene : Node2D
             "LOSE" => LoseArt,
             _ => null
         };
-        if (banner == null && countdown > 0)
+        if (banner == null && countdown > 0 && countdown <= CountdownSeconds)
         {
             banner = Mathf.CeilToInt(countdown) switch
             {
@@ -1027,12 +1048,41 @@ public partial class GameScene : Node2D
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         if (MagnifiedFrame != null) DrawTextureRect(MagnifiedFrame, screen, false, tint);
     }
-    private void Paint(Card card, bool hidden, Vector2 sway = default)
+    private void DrawFan(List<Card> cards, bool upper, Vector2 sway, Card lifted = null)
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            Card card = cards[i];
+            if (card == held || card == lifted) continue;
+            float progress = 1;
+            if (countdown > CountdownSeconds)
+            {
+                // The rival gets the first card and the final, odd card.
+                int order = 2 * i + (upper ? 0 : 1);
+                float time = dealDuration + CountdownSeconds - countdown - order * DealInterval;
+                if (time <= 0) continue;
+                progress = Phase(time, 0, DealFlight);
+            }
+            Paint(card, upper, sway, progress);
+        }
+    }
+
+    private void Paint(Card card, bool hidden, Vector2 sway = default, float dealProgress = 1)
     {
         bool fading = discarding.Contains(card);
         float scale = fading ? card.DrawnScale : card == carried ? CarriedScale : hidden ? RivalScale : PlayerScale;
         float alpha = fading ? card.Alpha : 1f;
-        DrawSetTransform(card.Position + sway,card.Angle,Vector2.One * scale);
+        Vector2 position = card.Position + sway;
+        float angle = card.Angle;
+        if (dealProgress < 1)
+        {
+            Vector2 origin = new(hidden ? 995 : -35, 367);
+            position = origin.Lerp(position, dealProgress);
+            position.Y -= 44 * Mathf.Sin(Mathf.Pi * dealProgress);
+            angle = Mathf.LerpAngle(hidden ? -0.48f : 0.48f, angle, dealProgress);
+            scale = Mathf.Lerp(0.7f, scale, dealProgress);
+        }
+        DrawSetTransform(position, angle, Vector2.One * scale);
 
         Texture2D tex = hidden ? Back : Face(card);
         if (tex != null)

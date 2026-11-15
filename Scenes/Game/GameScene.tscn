@@ -9,6 +9,11 @@
 [ext_resource type="Texture2D" uid="uid://c0ew3ar26t1su" path="res://Art/Used/cat/cat.png" id="BodyArt"]
 [ext_resource type="Texture2D" uid="uid://cjndvspnqsk3b" path="res://Art/Used/player/floating hold.png" id="ClosedHandArt"]
 [ext_resource type="Texture2D" uid="uid://ord7brjjxulm" path="res://Art/Used/cat/face.png" id="FaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face_self.png" id="SelfFaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face_stress.png" id="StressFaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face_smile.svg" id="SmileFaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face_grimace.svg" id="GrimaceFaceArt"]
+[ext_resource type="Texture2D" path="res://Art/Used/cat/face_self_stress.png" id="SelfStressFaceArt"]
 [ext_resource type="Texture2D" uid="uid://bkmcwuat2cbd2" path="res://Art/Used/glass.png" id="GlassArt"]
 [ext_resource type="Texture2D" uid="uid://chuk1kwkkvn6p" path="res://Art/Used/player/floating.png" id="HandArt"]
 [ext_resource type="Texture2D" uid="uid://b5l1713ee1tpf" path="res://cards/Hearts1.png" id="Hearts1"]
@@ -97,6 +102,11 @@ PartyArt = ExtResource("PartyArt")
 PartyShadow = ExtResource("PartyShadow")
 LampArt = ExtResource("LampArt")
 FaceArt = ExtResource("FaceArt")
+SelfFaceArt = ExtResource("SelfFaceArt")
+StressFaceArt = ExtResource("StressFaceArt")
+SmileFaceArt = ExtResource("SmileFaceArt")
+GrimaceFaceArt = ExtResource("GrimaceFaceArt")
+SelfStressFaceArt = ExtResource("SelfStressFaceArt")
 SleeveBase = ExtResource("SleeveBase")
 SupportArt = SubResource("crop_SupportArt")
 ClosedHandArt = SubResource("crop_ClosedHandArt")
