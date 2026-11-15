@@ -50,6 +50,7 @@ theme_override_constants/separation = 36
 alignment = 1
 
 [node name="CenterImage" type="TextureRect" parent="MainLayout/VBoxContainer/CenterContainer/CenterGroup" unique_id=1016745138]
+texture_filter = 1
 custom_minimum_size = Vector2(360, 220)
 layout_mode = 2
 texture = ExtResource("2_i4gu4")
