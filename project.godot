@@ -22,7 +22,7 @@ SoundEffectManager="*res://Scenes/Audio/sound_effect_manager.tscn"
 [display]
 
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="keep"
 
 [dotnet]
 
