@@ -2,12 +2,13 @@
 
 [ext_resource type="Script" uid="uid://c4xuqehrmly7q" path="res://Scenes/Game/GameScene.cs" id="1"]
 [ext_resource type="Texture2D" uid="uid://bkapdr1sye6n6" path="res://Art/Used/glass_icon.png" id="20_l6isw"]
-[ext_resource type="Texture2D" path="res://Art/Used/magnified_back.png" id="MagnifiedBackground"]
-[ext_resource type="Texture2D" path="res://Art/Used/magnified_frame.png" id="MagnifiedFrame"]
 [ext_resource type="Texture2D" uid="uid://dpt6vilm2h8rj" path="res://cards/CardBack.png" id="Back"]
 [ext_resource type="Texture2D" uid="uid://c8nkhagwxmxi8" path="res://Art/Used/background.png" id="BackgroundArt"]
 [ext_resource type="Texture2D" uid="uid://c0ew3ar26t1su" path="res://Art/Used/cat/cat.png" id="BodyArt"]
 [ext_resource type="Texture2D" uid="uid://cjndvspnqsk3b" path="res://Art/Used/player/floating hold.png" id="ClosedHandArt"]
+[ext_resource type="Texture2D" uid="uid://comd3de6jst6d" path="res://Art/Used/ui/1.png" id="Count1"]
+[ext_resource type="Texture2D" uid="uid://dgn4y4fhpm181" path="res://Art/Used/ui/2.png" id="Count2"]
+[ext_resource type="Texture2D" uid="uid://gsv3h1fsuecm" path="res://Art/Used/ui/3.png" id="Count3"]
 [ext_resource type="Texture2D" uid="uid://ord7brjjxulm" path="res://Art/Used/cat/face.png" id="FaceArt"]
 [ext_resource type="Texture2D" path="res://Art/Used/cat/face_self.png" id="SelfFaceArt"]
 [ext_resource type="Texture2D" path="res://Art/Used/cat/face_stress.png" id="StressFaceArt"]
@@ -15,6 +16,7 @@
 [ext_resource type="Texture2D" path="res://Art/Used/cat/face_grimace.svg" id="GrimaceFaceArt"]
 [ext_resource type="Texture2D" path="res://Art/Used/cat/face_self_stress.png" id="SelfStressFaceArt"]
 [ext_resource type="Texture2D" uid="uid://bkmcwuat2cbd2" path="res://Art/Used/glass.png" id="GlassArt"]
+[ext_resource type="Texture2D" uid="uid://dp18m4kd2pfj4" path="res://Art/Used/ui/go.png" id="GoArt"]
 [ext_resource type="Texture2D" uid="uid://chuk1kwkkvn6p" path="res://Art/Used/player/floating.png" id="HandArt"]
 [ext_resource type="Texture2D" uid="uid://b5l1713ee1tpf" path="res://cards/Hearts1.png" id="Hearts1"]
 [ext_resource type="Texture2D" uid="uid://8denaufmjnyg" path="res://cards/Hearts2.png" id="Hearts2"]
@@ -29,6 +31,9 @@
 [ext_resource type="Texture2D" uid="uid://bxlkmgvks104y" path="res://Art/Used/cat/cat_checking.png" id="InspectPose"]
 [ext_resource type="Texture2D" uid="uid://cahu71kdu258i" path="res://cards/Joker.png" id="Joker"]
 [ext_resource type="Texture2D" uid="uid://cggfwxf0eo802" path="res://Art/Used/object.png" id="LampArt"]
+[ext_resource type="Texture2D" uid="uid://bfyry5o6fw1t8" path="res://Art/Used/ui/lose.png" id="LoseArt"]
+[ext_resource type="Texture2D" uid="uid://u73g0np5ehcg" path="res://Art/Used/magnified_back.png" id="MagnifiedBackground"]
+[ext_resource type="Texture2D" uid="uid://cgy5c7w1rrd3e" path="res://Art/Used/magnified_frame.png" id="MagnifiedFrame"]
 [ext_resource type="Texture2D" uid="uid://oxigxfwyd7fx" path="res://Art/Used/cat/hand.png" id="PalmArt"]
 [ext_resource type="Texture2D" uid="uid://dk2ba8imvfalu" path="res://Art/Used/party.png" id="PartyArt"]
 [ext_resource type="Texture2D" uid="uid://q4gewuforj7e" path="res://Art/Used/shadow.png" id="PartyShadow"]
@@ -48,12 +53,7 @@
 [ext_resource type="Texture2D" uid="uid://c12gh7luav3uy" path="res://Art/Used/cat/card hand.png" id="SupportArt"]
 [ext_resource type="Texture2D" uid="uid://ciyi616m1yc6w" path="res://Art/Used/table.png" id="TableArt"]
 [ext_resource type="Texture2D" uid="uid://n2mumqwxnvvd" path="res://Art/Used/player/thumb.png" id="ThumbArt"]
-[ext_resource type="Texture2D" uid="uid://gsv3h1fsuecm" path="res://Art/Used/ui/3.png" id="Count3"]
-[ext_resource type="Texture2D" uid="uid://dgn4y4fhpm181" path="res://Art/Used/ui/2.png" id="Count2"]
-[ext_resource type="Texture2D" uid="uid://comd3de6jst6d" path="res://Art/Used/ui/1.png" id="Count1"]
-[ext_resource type="Texture2D" uid="uid://dp18m4kd2pfj4" path="res://Art/Used/ui/go.png" id="GoArt"]
 [ext_resource type="Texture2D" uid="uid://cnfttuba15ant" path="res://Art/Used/ui/win.png" id="WinArt"]
-[ext_resource type="Texture2D" uid="uid://bfyry5o6fw1t8" path="res://Art/Used/ui/lose.png" id="LoseArt"]
 
 [sub_resource type="AtlasTexture" id="crop_HandArt"]
 atlas = ExtResource("HandArt")
@@ -120,3 +120,6 @@ Count1Art = ExtResource("Count1")
 GoArt = ExtResource("GoArt")
 WinArt = ExtResource("WinArt")
 LoseArt = ExtResource("LoseArt")
+PlayerHandOffsetX = -90.0
+PlayerCardOffsetX = -90.0
+PlayerFanRotationDegrees = 25.0

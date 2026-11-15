@@ -510,6 +510,15 @@ public partial class GameScene : Node2D
     private const float MaxPlayerGapSpread = 27f;
     private const float HeldLift = HoverLift + 24f;
 
+    [Export] public float PlayerHandOffsetX { get; set; } = 0f;
+    [Export] public float PlayerHandOffsetY { get; set; } = 0f;
+    [Export] public float PlayerCardOffsetX { get; set; } = 16f;
+    [Export] public float PlayerCardOffsetY { get; set; } = 0f;
+    [Export(PropertyHint.Range, "-90,90,0.5")]
+    public float PlayerFanRotationDegrees { get; set; } = 0f;
+
+    private float BaseFanAngle(bool upper) => upper ? 0f : Mathf.DegToRad(PlayerFanRotationDegrees);
+
     private static float SpreadScale(int slots) =>
         1f + 0.65f * Mathf.Clamp((slots - 5) / 5f, 0f, 1f);
 
@@ -522,30 +531,33 @@ public partial class GameScene : Node2D
         return Mathf.Min(openingStep * Mathf.Sqrt(openingGaps / gaps), 1.37f / gaps);
     }
 
-    private static float SlotAngle(int i, int total, bool upper) =>
-        (i - (total - 1) * 0.5f) * FanStep(total, upper);
+    private static float HalfFanSpread(int total, bool upper) =>
+        (total - 1) * 0.5f * FanStep(total, upper);
 
-    private static Vector2 Slot(int i, int total, bool upper) =>
+    private float SlotAngle(int i, int total, bool upper) =>
+        BaseFanAngle(upper) + (i - (total - 1) * 0.5f) * FanStep(total, upper);
+
+    private Vector2 Slot(int i, int total, bool upper) =>
         FanPosition(SlotAngle(i, total, upper), total, upper);
 
-    private static Vector2 FanPosition(float angle, int total, bool upper)
+    private Vector2 FanPosition(float angle, int total, bool upper)
         => FanCenter(total, upper) + Vector2.Up.Rotated(angle) * (upper ? RivalFanRadius : PlayerFanRadius);
 
-    private static Vector2 FanCenter(int total, bool upper)
+    private Vector2 FanCenter(int total, bool upper)
     {
         float radius = upper ? RivalFanRadius : PlayerFanRadius;
         float centerX = RivalFanCenterX;
         if (!upper)
         {
             // Frame the widest interaction pose, so opening a gap never pans the hand.
-            float outer = Mathf.Abs(SlotAngle(0, total, false));
+            float outer = HalfFanSpread(total, false);
             float openAngle = outer + MaxPlayerGapSpread * SpreadScale(total) / radius;
             float CornerExtent(float angle, float lift) =>
                 (radius + lift + 60 * PlayerScale) * Mathf.Sin(angle) + 38 * PlayerScale * Mathf.Cos(angle);
             float extent = Mathf.Max(CornerExtent(openAngle, 0), CornerExtent(outer, HeldLift));
-            centerX = Mathf.Max(206, extent + 16); // Includes the hand sway and selection outline.
+            centerX = Mathf.Max(206 - PlayerCardOffsetX, extent) + PlayerCardOffsetX + PlayerHandOffsetX; // Includes the hand sway and selection outline.
         }
-        return new(centerX, (upper ? 287 : 386) + radius);
+        return new(centerX, (upper ? 287 : 386 + PlayerCardOffsetY + PlayerHandOffsetY) + radius);
     }
 
     // The dragged rival card still belongs to the list but occupies no visible slot.
@@ -657,7 +669,8 @@ public partial class GameScene : Node2D
         float halfHeight = -bounds.Position.Y * (upper ? RivalScale : PlayerScale);
         if (radial.Length() < radius - halfHeight || radial.Length() > radius + halfHeight + HoverLift)
             return null;
-        int index = Mathf.FloorToInt(Vector2.Up.AngleTo(radial) / FanStep(slots, upper) + slots * 0.5f);
+        float localAngle = Vector2.Up.AngleTo(radial) - BaseFanAngle(upper);
+        int index = Mathf.FloorToInt(localAngle / FanStep(slots, upper) + slots * 0.5f);
         if (index < 0 || index >= slots) return null;
         if (receiving && index == RivalGapIndex) return null;
         if (receiving && index > RivalGapIndex) index--;
@@ -778,25 +791,28 @@ public partial class GameScene : Node2D
         int count = fromRival ? rival.Count : mine.Count;
         Vector2 center = FanCenter(count, fromRival);
         float radius = fromRival ? RivalFanRadius : PlayerFanRadius;
-        float outer = SlotAngle(count - 1, count, fromRival);
+        float outer = HalfFanSpread(count, fromRival);
+        float baseAngle = BaseFanAngle(fromRival);
         if (fromRival)
         {
             // Move the supporting arc between hands while the stolen card is in transit.
             float travel = RivalDrawProgress;
             center = center.Lerp(FanCenter(mine.Count + 1, false), travel);
             radius = Mathf.Lerp(radius, PlayerFanRadius, travel);
-            outer = Mathf.Lerp(outer, SlotAngle(mine.Count, mine.Count + 1, false), travel);
+            outer = Mathf.Lerp(outer, HalfFanSpread(mine.Count + 1, false), travel);
+            baseAngle = Mathf.Lerp(baseAngle, BaseFanAngle(false), travel);
         }
-        float angle = Mathf.Clamp(Vector2.Up.AngleTo(pointer - center) + grabAngleOffset, -outer, outer);
+        float localAngle = Mathf.Clamp(Vector2.Up.AngleTo(pointer - center) + grabAngleOffset - baseAngle, -outer, outer);
+        float angle = baseAngle + localAngle;
         held.Angle = angle;
         held.Position = center + Vector2.Up.Rotated(angle) * (radius + HeldLift);
         if (fromRival) return;
 
         int source = mine.IndexOf(held);
-        int nextGap = Mathf.Clamp(Mathf.FloorToInt(angle / FanStep(count, false) + count * 0.5f), 0, count - 1);
+        int nextGap = Mathf.Clamp(Mathf.FloorToInt(localAngle / FanStep(count, false) + count * 0.5f), 0, count - 1);
         gap = dragged ? nextGap : source;
         if (held.Rank == 0) return;
-        float fanIndex = angle / FanStep(count, false) + (count - 1) * 0.5f;
+        float fanIndex = localAngle / FanStep(count, false) + (count - 1) * 0.5f;
         float nearest = float.PositiveInfinity;
         for (int index = 0; index < count; index++)
         {
@@ -914,6 +930,13 @@ public partial class GameScene : Node2D
             DrawTextureRect(PalmArt, new Rect2(302,183,107,158), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
         if (lifted != null && lifted != held && rival.Contains(lifted)) Paint(lifted, true);
+        Vector2 playerHandTransform = playerSway + new Vector2(PlayerHandOffsetX, PlayerHandOffsetY);
+        if (PlayerSupport != null)
+        {
+            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawTextureRect(PlayerSupport, new Rect2(99, 421, 285, 264), false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         if (held != null && !heldInFront) Paint(held, fromRival);
         DrawFan(mine, false, playerSway);
         foreach (var card in discarding) Paint(card, false);
@@ -927,10 +950,12 @@ public partial class GameScene : Node2D
             DrawTextureRect(RivalPawArt,new Rect2(paw - size / 2,size),false);
         }
         if (heldInFront) Paint(held, true);
-        DrawSetTransform(playerSway + new Vector2(8, 0), 0, Vector2.One);
-        if (PlayerSupport != null) DrawTextureRect(PlayerSupport,new Rect2(99,421,285,264),false);
-        if (ThumbArt != null) DrawTextureRect(ThumbArt,new Rect2(127,459,160,106),false);
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        if (ThumbArt != null)
+        {
+            DrawSetTransform(playerHandTransform, 0, Vector2.One);
+            DrawTextureRect(ThumbArt, new Rect2(160, 459, 160, 106), false);
+            DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
         overLensCards = false;
         float lensOpacity = Mathf.SmoothStep(0, 1, Mathf.Clamp((inspectProgress - 0.2f) / 0.8f, 0, 1));
         if (lensOpacity > 0) DrawMagnifier(lensOpacity);
